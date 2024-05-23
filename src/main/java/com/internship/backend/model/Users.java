@@ -1,10 +1,8 @@
 package com.internship.backend.model;
 
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.internship.backend.enums.Role;
+import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -22,6 +20,11 @@ import lombok.Setter;
 @Getter
 @Valid
 public class Users {
+
+    //@NotBlank
+    //@NotNull(message="enter ADMIN or CLIENT")
+    @Enumerated(EnumType.STRING)
+    private Role rights;
 
     @NotNull(message="id must not be null")
     @Id
@@ -56,5 +59,16 @@ public class Users {
         result = 31 * result + password.hashCode();
         result = 31 * result + email.hashCode();
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "Users{" +
+                "id=" + id +
+                ", rights='" + rights + '\'' +
+                ", username='" + username + '\'' +
+                ", password='" + password + '\'' +
+                ", email='" + email + '\'' +
+                '}';
     }
 }

@@ -1,5 +1,7 @@
 package com.internship.backend.service;
 
+import com.internship.backend.exceptions.UserAlreadyExistsException;
+import com.internship.backend.exceptions.UserDoesNotExistException;
 import com.internship.backend.model.Users;
 import com.internship.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +15,10 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
-    public Users update(int userId, Users updatedUser) {
-        Users user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+    public Users update(int userId, Users updatedUser) throws UserDoesNotExistException {
+        Users user = userRepository.findById(userId).orElseThrow(() -> new UserDoesNotExistException("User not found"));
+
+        user.setRights(updatedUser.getRights());
         user.setUsername(updatedUser.getUsername());
         user.setPassword(updatedUser.getPassword());
         user.setEmail(updatedUser.getEmail());
@@ -28,19 +32,21 @@ public class UserService {
 
         userRepository.deleteById(userId);
 
-    if (userRepository.count() == 0) {
-        userRepository.resetAutoIncrementId();
+        if (userRepository.count() == 0) {
+            userRepository.resetAutoIncrementId();
         }
     }
 
-    public Users register(Users users) {
+    public Users register(Users users) throws UserAlreadyExistsException {
         if (userRepository.findByUsername(users.getUsername()) != null) {
-            throw new RuntimeException("User already exists");
+            throw new UserAlreadyExistsException("Username already exists");//
         }
         if (userRepository.findByEmail(users.getEmail()) != null) {
-            throw new RuntimeException("Email already exists");
+            throw new UserAlreadyExistsException("Email already exists");
         }
-        return userRepository.save(users);
+        var savedUser = userRepository.save(users);
+        //LOG.info("saved user: " + savedUser);
+        return savedUser;
     }
 
     public Users login(String username, String password) {
