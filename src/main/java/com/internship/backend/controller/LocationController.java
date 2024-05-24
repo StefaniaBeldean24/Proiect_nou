@@ -39,6 +39,7 @@ public class LocationController {
     public ResponseEntity<List<Location>> getAllLocations() {
         Optional<List<Location>> location = Optional.ofNullable(locationService.getAllLocations());
         if(location.isPresent()) {
+            Log.info("Get all: ", location.toString());
             return ok(locationService.getAllLocations());
         }
         else {

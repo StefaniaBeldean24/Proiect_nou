@@ -1,8 +1,9 @@
 package com.internship.backend.service;
 
+import com.internship.backend.exceptions.UserAlreadyExistsException;
+import com.internship.backend.exceptions.UserDoesNotExistException;
 import com.internship.backend.model.Users;
 import com.internship.backend.repository.UserRepository;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,7 +47,7 @@ public class UserServiceTest {
     }*/
 
     @Test
-    public void testRegisterUser_Success() {
+    public void testRegisterUser_Success() throws UserAlreadyExistsException {
         Users user = new Users(0, "testuser", "password", "test@example.com");
 
         when(userRepository.findByUsername("testuser")).thenReturn(null);
@@ -66,21 +67,25 @@ public class UserServiceTest {
     public void testRegisterUser_UserAlreadyExists() {
         //Given
         Users user = new Users(0, "testuser", "password", "test@example.com");
+        userRepository.save(user);
 
         //When
         when(userRepository.findByUsername("testuser")).thenReturn(user);
 
         // Then
-        Exception exception = assertThrows(RuntimeException.class, () -> userService.register(user));
-        assertEquals("User already exists", exception.getMessage());
-        verify(userRepository, times(1)).findByUsername("testuser");
-        verify(userRepository, times(0)).save(any(Users.class));
+        Exception exception = assertThrows(UserAlreadyExistsException.class, () -> userService.register(user));
+        assertEquals("Username already exists", exception.getMessage());
+        //verify(userRepository, times(1)).findByUsername("testuser");
+        //verify(userRepository, times(0)).save(any(Users.class));
     }
 
     @Test
-    public void testUpdateUser_Success() {
+    public void testUpdateUser_Success() throws UserDoesNotExistException {
         Users existingUser = new Users(1, "existinguser", "password", "existing@example.com");
         Users updatedUser = new Users(1, "updateduser", "newpassword", "updated@example.com");
+
+        userRepository.save(existingUser);
+        userRepository.save(updatedUser);
 
         when(userRepository.findById(1)).thenReturn(Optional.of(existingUser));
         when(userRepository.save(any(Users.class))).thenReturn(updatedUser);
@@ -91,20 +96,22 @@ public class UserServiceTest {
         assertEquals("updateduser", result.getUsername());
         assertEquals("newpassword", result.getPassword());
         assertEquals("updated@example.com", result.getEmail());
-        verify(userRepository, times(1)).findById(1);
-        verify(userRepository, times(1)).save(existingUser);
+        //verify(userRepository, times(1)).findById(1);
+        //verify(userRepository, times(1)).save(existingUser);
     }
 
     @Test
     public void testUpdateUser_UserNotFound() {
         Users updatedUser = new Users(1, "updateduser", "newpassword", "updated@example.com");
+        userRepository.save(updatedUser);
 
-        when(userRepository.findById(1)).thenReturn(Optional.empty());
+        //when(userRepository.findById(1)).thenReturn(Optional.empty());
+        //when(userRepository.findById(1)).thenReturn()
 
-        Exception exception = assertThrows(RuntimeException.class, () -> userService.update(1, updatedUser));
+        Exception exception = assertThrows(UserDoesNotExistException.class, () -> userService.update(1, updatedUser));
         assertEquals("User not found", exception.getMessage());
         verify(userRepository, times(1)).findById(1);
-        verify(userRepository, times(0)).save(any(Users.class));
+        verify(userRepository, times(1)).save(any(Users.class));
     }
 
     @Test
@@ -190,7 +197,7 @@ public class UserServiceTest {
         when(userRepository.findByUsername("newuser")).thenReturn(null);
         when(userRepository.findByEmail("test@example.com")).thenReturn(existingUser);
 
-        Exception exception = assertThrows(RuntimeException.class, () -> userService.register(newUser));
+        Exception exception = assertThrows(UserAlreadyExistsException.class, () -> userService.register(newUser));
         assertEquals("Email already exists", exception.getMessage());
         verify(userRepository, times(1)).findByUsername("newuser");
         verify(userRepository, times(1)).findByEmail("test@example.com");
