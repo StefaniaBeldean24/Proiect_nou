@@ -1,10 +1,12 @@
 package com.internship.backend.model;
 
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.internship.backend.enums.Role;
+import jakarta.persistence.*;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,13 +18,29 @@ import lombok.Setter;
 @AllArgsConstructor
 @Setter
 @Getter
+@Valid
 public class Users {
 
+    //@NotBlank
+    //@NotNull(message="enter ADMIN or CLIENT")
+    @Enumerated(EnumType.STRING)
+    private Role rights;
+
+    @NotNull(message="id must not be null")
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
+    @NotBlank
+    @Size(min=4, max=10, message="username must be between 4 and 10 characters")
     private String username;
+
+    @NotBlank
+    @Size(min=8, max=30, message = "password must be between 8 and 30 characters")
     private String password;
+
+    @NotBlank
+    @Size(min=8, max=30, message= "email must be between 8 and 30 characters")
     private String email;
 
     @Override
@@ -41,5 +59,16 @@ public class Users {
         result = 31 * result + password.hashCode();
         result = 31 * result + email.hashCode();
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "Users{" +
+                "id=" + id +
+                ", rights='" + rights + '\'' +
+                ", username='" + username + '\'' +
+                ", password='" + password + '\'' +
+                ", email='" + email + '\'' +
+                '}';
     }
 }
