@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+//import org.springframework.security.access.annotation.Secured;
+//import org.springframework.security.access.annotation.Secured;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
@@ -98,13 +100,14 @@ public class UserController {
         }
     }
 
+    //@Secured("ADMIN")
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Users> deleteUser(@Valid @PathVariable("id") int userId) {
         try{
             Log.info("Deleting user: " + userId);
             userService.delete(userId);
             return ResponseEntity.ok().build();
-        }catch (RuntimeException e){
+        }catch (RuntimeException | UserDoesNotExistException e){
             Log.error("Error processing delete "+ e.getMessage());
             return ResponseEntity.notFound().build();
         }

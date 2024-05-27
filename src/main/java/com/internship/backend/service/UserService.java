@@ -5,6 +5,9 @@ import com.internship.backend.exceptions.UserDoesNotExistException;
 import com.internship.backend.model.Users;
 import com.internship.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.security.core.Authentication;
+//import org.springframework.security.core.context.SecurityContextHolder;
+//import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,9 +19,10 @@ public class UserService {
     private UserRepository userRepository;
 
     public Users update(int userId, Users updatedUser) throws UserDoesNotExistException {
+        //Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Users user = userRepository.findById(userId).orElseThrow(() -> new UserDoesNotExistException("User not found"));
 
-        user.setRights(updatedUser.getRights());
+        user.setRight(updatedUser.getRight());
         user.setUsername(updatedUser.getUsername());
         user.setPassword(updatedUser.getPassword());
         user.setEmail(updatedUser.getEmail());
@@ -26,7 +30,11 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public void delete(int userId) {
+    public void delete(int userId) throws UserDoesNotExistException {
+        //Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        //UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        //Users user = userRepository.findById(userId).orElseThrow(()->new UserDoesNotExistException("User not found"));
+
         if (!userRepository.existsById(userId))
             throw new RuntimeException("User does not exist");
 
@@ -35,7 +43,14 @@ public class UserService {
         if (userRepository.count() == 0) {
             userRepository.resetAutoIncrementId();
         }
+
+        //if(isAdmin(userDetails, user)) userRepository.deleteById(userId);
+        //else throw new SecurityException("User not authorized to delete this information");
     }
+
+//    private boolean isAdmin(UserDetails userDetails, Users user){
+//        return userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ADMIN") || user.getUsername().equals((userDetails.getUsername())));
+//    }
 
     public Users register(Users users) throws UserAlreadyExistsException {
         if (userRepository.findByUsername(users.getUsername()) != null) {

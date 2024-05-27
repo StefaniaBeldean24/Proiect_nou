@@ -24,7 +24,7 @@ public class Users {
     //@NotBlank
     //@NotNull(message="enter ADMIN or CLIENT")
     @Enumerated(EnumType.STRING)
-    private Role rights;
+    private Role right;
 
     @NotNull(message="id must not be null")
     @Id
@@ -65,7 +65,7 @@ public class Users {
     public String toString() {
         return "Users{" +
                 "id=" + id +
-                ", rights='" + rights + '\'' +
+                ", rights='" + right + '\'' +
                 ", username='" + username + '\'' +
                 ", password='" + password + '\'' +
                 ", email='" + email + '\'' +
