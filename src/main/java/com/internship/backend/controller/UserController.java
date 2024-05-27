@@ -11,8 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-//import org.springframework.security.access.annotation.Secured;
-//import org.springframework.security.access.annotation.Secured;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
@@ -54,19 +52,18 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<Users> registerUser(@Valid @RequestBody Users users) {
-        try{
+        try {
             Optional<Users> newUser = Optional.ofNullable(userService.register(users));
-            if(newUser.isPresent()) {
+            if (newUser.isPresent()) {
                 Log.info("Registered user: {}", newUser.get());
-                return ResponseEntity.ok().build();
-            }
-            else return ResponseEntity.status(HttpStatus.CONFLICT).build();
-        }catch (UserAlreadyExistsException e){
+                return ResponseEntity.ok(newUser.get());
+            } else return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        } catch (UserAlreadyExistsException e) {
             Log.error(e.getMessage());
             return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
-        }catch (Exception e){
-            Log.error("Wrong role!");
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+        } catch (Exception e) {
+            Log.error("Error during registration: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
     }
 
@@ -100,7 +97,6 @@ public class UserController {
         }
     }
 
-    //@Secured("ADMIN")
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Users> deleteUser(@Valid @PathVariable("id") int userId) {
         try{
@@ -127,19 +123,6 @@ public class UserController {
         return errors;
     }
 
-
-
-    /*@PostMapping("/tennis-courts")
-    public TennisCourt addTennisCourt(@RequestBody TennisCourt tennisCourt) {
-        return adminService.addTennisCourt(tennisCourt);
-    }
-
-    @PostMapping("/price")
-    public Price addPrice(@RequestBody PriceDTO priceDTO) {
-        Price savedPrice = adminService.addPrice(priceDTO);
-        //return adminService.addPrice(price);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedPrice).getBody();
-    }*/
 
 
 

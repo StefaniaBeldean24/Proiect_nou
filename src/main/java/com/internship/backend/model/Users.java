@@ -21,10 +21,9 @@ import lombok.Setter;
 @Valid
 public class Users {
 
-    //@NotBlank
     //@NotNull(message="enter ADMIN or CLIENT")
     @Enumerated(EnumType.STRING)
-    private Role right;
+    private Role role;
 
     @NotNull(message="id must not be null")
     @Id
@@ -36,11 +35,11 @@ public class Users {
     private String username;
 
     @NotBlank
-    @Size(min=8, max=30, message = "password must be between 8 and 30 characters")
+    @Size(min=8, max=255, message = "password must be between 8 and 30 characters")
     private String password;
 
     @NotBlank
-    @Size(min=8, max=30, message= "email must be between 8 and 30 characters")
+    @Size(min=6, max=30, message= "email must be between 6 and 30 characters")
     private String email;
 
     @Override
@@ -65,7 +64,7 @@ public class Users {
     public String toString() {
         return "Users{" +
                 "id=" + id +
-                ", rights='" + right + '\'' +
+                ", rights='" + role + '\'' +
                 ", username='" + username + '\'' +
                 ", password='" + password + '\'' +
                 ", email='" + email + '\'' +
