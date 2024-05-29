@@ -10,11 +10,7 @@
     import org.springframework.security.config.annotation.web.builders.HttpSecurity;
     import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
     import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
-    import org.springframework.security.core.userdetails.User;
-    import org.springframework.security.core.userdetails.UserDetails;
-    import org.springframework.security.core.userdetails.UserDetailsService;
     import org.springframework.security.crypto.password.PasswordEncoder;
-    import org.springframework.security.provisioning.InMemoryUserDetailsManager;
     import org.springframework.security.web.SecurityFilterChain;
 
 
@@ -46,6 +42,27 @@
                             .requestMatchers(HttpMethod.POST, "/api/users/**").hasRole("ADMIN")
                             .requestMatchers(HttpMethod.PUT, "/api/users/**").hasRole("ADMIN")
                             .requestMatchers(HttpMethod.GET, "/api/users/**").hasRole("ADMIN")
+
+                            .requestMatchers(HttpMethod.GET, "/api/location/getAll").hasAnyRole("ADMIN", "CLIENT")
+                            .requestMatchers(HttpMethod.POST, "/api/location/add").hasRole("ADMIN")
+                            .requestMatchers(HttpMethod.PUT, "/api/location/**").hasRole("ADMIN")
+                            .requestMatchers(HttpMethod.DELETE, "/api/location/**").hasRole("ADMIN")
+
+                            .requestMatchers(HttpMethod.GET, "/api/tennisCourts/getAll").hasAnyRole("ADMIN", "CLIENT")
+                            .requestMatchers(HttpMethod.POST, "/api/tennisCourts/add").hasRole("ADMIN")
+                            .requestMatchers(HttpMethod.PUT, "/api/tennisCourts/**").hasRole("ADMIN")
+                            .requestMatchers(HttpMethod.DELETE, "/api/tennisCourts/**").hasRole("ADMIN")
+
+                            .requestMatchers(HttpMethod.GET, "/api/prices/getAll").hasAnyRole("ADMIN", "CLIENT")
+                            .requestMatchers(HttpMethod.POST, "/api/prices/add").hasRole("ADMIN")
+                            .requestMatchers(HttpMethod.PUT, "/api/prices/**").hasRole("ADMIN")
+                            .requestMatchers(HttpMethod.DELETE, "/api/prices/**").hasRole("ADMIN")
+
+                            .requestMatchers(HttpMethod.GET, "/api/reservations/getAll").hasAnyRole("ADMIN", "CLIENT")
+                            .requestMatchers(HttpMethod.POST, "/api/reservations/add").hasAnyRole("ADMIN", "CLIENT")
+                            .requestMatchers(HttpMethod.PUT, "/api/reservations/**").hasAnyRole("ADMIN", "CLIENT")
+                            .requestMatchers(HttpMethod.DELETE, "/api/reservations/**").hasAnyRole("ADMIN", "CLIENT")
+
                             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").hasAnyRole("ADMIN", "CLIENT")
                             .anyRequest().authenticated()
             );
