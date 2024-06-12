@@ -4,12 +4,13 @@ import com.internship.backend.exceptions.UserAlreadyExistsException;
 import com.internship.backend.exceptions.UserDoesNotExistException;
 import com.internship.backend.model.Users;
 import com.internship.backend.repository.UserRepository;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+
 
 @Service
 public class UserService {
@@ -42,23 +43,24 @@ public class UserService {
         }
     }
 
-    public Users register(Users users) throws UserAlreadyExistsException {
-        if (userRepository.findByUsername(users.getUsername()) != null) {
+    public Users register(Users user) throws UserAlreadyExistsException {
+        if (userRepository.findByUsername(user.getUsername()) != null) {
             throw new UserAlreadyExistsException("Username already exists");
         }
-        if (userRepository.findByEmail(users.getEmail()) != null) {
+        if (userRepository.findByEmail(user.getEmail()) != null) {
             throw new UserAlreadyExistsException("Email already exists");
         }
-        users.setPassword(passwordEncoder.encode(users.getPassword()));
-        return userRepository.save(users);
+        String hashPassword = passwordEncoder.encode(user.getPassword());
+        user.setPassword(hashPassword);
+        return userRepository.save(user);
     }
 
     public Users login(String username, String password) {
-        Users users = userRepository.findByUsername(username);
+        var users = userRepository.findByUsername(username);
 
-        if (users != null && passwordEncoder.matches(password, users.getPassword())) {
+        if (!ObjectUtils.isEmpty(users))
             return users;
-        }
+
         return null;
     }
 

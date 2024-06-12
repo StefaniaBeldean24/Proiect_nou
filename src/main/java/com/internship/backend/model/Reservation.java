@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -26,4 +25,13 @@ public class Reservation {
 
     private LocalDateTime startTime;
     private LocalDateTime endTime;
+
+//    private int year;
+//    private int month;
+//    private int day;
+//    private int startHour;
+//    private int endHour;
 }
+
+//endpoint in care user-ul sa vada toate terenurile disponibile dintr-o anumita data
+//

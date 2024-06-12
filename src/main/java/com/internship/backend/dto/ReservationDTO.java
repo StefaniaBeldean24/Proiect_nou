@@ -15,6 +15,12 @@ public class ReservationDTO {
     private int id;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
-    private int userId;
-    private int tennisCourtId;
+
+//    private int year;
+//    private int month;
+//    private int day;
+//    private int startHour;
+//    private int endHour;
+//    private int userId;
+//    private int tennisCourtId;
 }

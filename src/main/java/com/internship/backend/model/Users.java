@@ -1,16 +1,17 @@
 package com.internship.backend.model;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.internship.backend.enums.Role;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+
+import java.util.Set;
 
 
 @Entity
@@ -19,9 +20,9 @@ import lombok.Setter;
 @Setter
 @Getter
 @Valid
+@Builder
 public class Users {
 
-    //@NotNull(message="enter ADMIN or CLIENT")
     @Enumerated(EnumType.STRING)
     private Role role;
 
@@ -50,6 +51,10 @@ public class Users {
         Users users = (Users) o;
         return id == users.id && username.equals(users.username) && password.equals(users.password) && email.equals(users.email);
     }
+
+    @JsonManagedReference
+    @OneToMany(mappedBy="user", fetch = FetchType.EAGER)
+    private Set<Authority> authorities;
 
     @Override
     public int hashCode() {

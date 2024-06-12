@@ -3,14 +3,16 @@ package com.internship.backend.controller;
 import com.internship.backend.exceptions.UserAlreadyExistsException;
 import com.internship.backend.exceptions.UserDoesNotExistException;
 import com.internship.backend.model.Users;
-import com.internship.backend.service.AdminService;
 import com.internship.backend.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
@@ -32,10 +34,6 @@ public class UserController {
 
     @Autowired
     private UserService userService;
-
-    @Autowired
-    private AdminService adminService;
-
 
     @GetMapping("/getAll")
     public ResponseEntity<List<Users>> getAll(){
@@ -68,7 +66,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> loginUser(@Valid @RequestBody Users loginDetails) {
+    public ResponseEntity<?> loginUser(@Valid @RequestBody Users loginDetails) {//dto
         try{
             Optional<Users> users = Optional.ofNullable(userService.login(loginDetails.getUsername(), loginDetails.getPassword()));
             if (users.isPresent()) {
@@ -122,7 +120,6 @@ public class UserController {
         });
         return errors;
     }
-
 
 
 

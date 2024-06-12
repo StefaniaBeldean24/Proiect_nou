@@ -72,5 +72,6 @@ public class TennisCourtService {
 
         locationRepository.deleteById(tennisCourtId);
     }
+
 }
 

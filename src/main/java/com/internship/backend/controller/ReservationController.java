@@ -1,7 +1,7 @@
 package com.internship.backend.controller;
 
-import com.internship.backend.dto.PriceDTO;
 import com.internship.backend.dto.ReservationDTO;
+import com.internship.backend.exceptions.ReservationAlreadyExists;
 import com.internship.backend.model.Price;
 import com.internship.backend.model.Reservation;
 import com.internship.backend.service.ReservationService;
@@ -29,7 +29,7 @@ public class ReservationController {
     private ReservationService reservationService;
 
     @PostMapping("/add")
-    public Reservation addReservation(@RequestBody ReservationDTO reservatonDTO){
+    public Reservation addReservation(@RequestBody ReservationDTO reservatonDTO) throws ReservationAlreadyExists {
         Reservation reservation = reservationService.fromDTO(reservatonDTO);
         reservationService.addReservation(reservation);
         return new ResponseEntity<>(reservation, HttpStatus.CREATED).getBody();
@@ -71,4 +71,6 @@ public class ReservationController {
             return ResponseEntity.notFound().build();
         }
     }
+
+
 }
