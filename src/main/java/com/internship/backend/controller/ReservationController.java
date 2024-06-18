@@ -2,10 +2,9 @@ package com.internship.backend.controller;
 
 import com.internship.backend.dto.ReservationDTO;
 import com.internship.backend.exceptions.ReservationAlreadyExists;
-import com.internship.backend.model.Price;
-import com.internship.backend.model.Reservation;
+import com.internship.backend.exceptions.ReservationDoesNotExistException;
+import com.internship.backend.model.*;
 import com.internship.backend.service.ReservationService;
-import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,8 +28,8 @@ public class ReservationController {
     private ReservationService reservationService;
 
     @PostMapping("/add")
-    public Reservation addReservation(@RequestBody ReservationDTO reservatonDTO) throws ReservationAlreadyExists {
-        Reservation reservation = reservationService.fromDTO(reservatonDTO);
+    public Reservation addReservation(@RequestBody ReservationDTO reservationDTO) throws ReservationAlreadyExists {
+        Reservation reservation = reservationService.fromDTO(reservationDTO);
         reservationService.addReservation(reservation);
         return new ResponseEntity<>(reservation, HttpStatus.CREATED).getBody();
     }
@@ -46,15 +45,21 @@ public class ReservationController {
         }
     }
 
+    @PostMapping("/available")
+    public ResponseEntity<List<TennisCourt>> getAvailableTennisCourts(@RequestBody DateRangeRequest dateRangeRequest) {
+        List<TennisCourt> availableTennisCourts = reservationService.getAvailableTennisCourts(dateRangeRequest.getStartDate(), dateRangeRequest.getEndDate());
+        return ResponseEntity.ok(availableTennisCourts);
+    }
+
     @PutMapping("/update/{id}")
-    public ResponseEntity<Reservation> updateReservation(@PathVariable("id") int reservationId, @RequestBody ReservationDTO reservationDTO){
+    public ResponseEntity<Reservation> updateReservation(@PathVariable("id") int reservationId, @RequestBody Reservation reservation){
         try{
-            Reservation reservation = reservationService.fromDTO(reservationDTO);
+            //Reservation reservation = reservationService.fromDTO(reservationDTO);
             Optional<Reservation> updatedReservation = Optional.ofNullable(reservationService.update(reservationId, reservation));
-            Log.info("Get all"+ reservation.toString());
+            Log.info("Get all"+ reservation);
             return ok(updatedReservation.get());
         }
-        catch(EntityNotFoundException e){
+        catch(ReservationAlreadyExists e){
             Log.error("Error processing update "+e.getMessage());
             return ResponseEntity.notFound().build();
         }
@@ -66,7 +71,7 @@ public class ReservationController {
             Log.info("Deleting reservation: "+ reservationId);
             reservationService.delete(reservationId);
             return ResponseEntity.ok().build();
-        }catch (RuntimeException e) {
+        }catch (ReservationDoesNotExistException e) {
             Log.error("Error processing delete " + e.getMessage());
             return ResponseEntity.notFound().build();
         }

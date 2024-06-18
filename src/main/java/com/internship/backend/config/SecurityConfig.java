@@ -1,36 +1,53 @@
 package com.internship.backend.config;
 
-import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
+import com.internship.backend.filter.CsrfCookieFilter;
+import com.internship.backend.filter.RequestValidationBeforeFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import javax.sql.DataSource;
+import java.util.Collections;
 
 @Configuration
 public class SecurityConfig {
 
     @Bean
     SecurityFilterChain SecurityFilterChain(HttpSecurity http) throws Exception {
+
+        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
+        requestHandler.setCsrfRequestAttributeName("_csrf");
+
         http
-                .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/api/**","/h2/**","/v2/api-docs", "/swagger-resources/**", "/swagger-ui/**", "/webjars/**", "/v3/api-docs/**")
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
+                .cors(corsCustomizer -> corsCustomizer.configurationSource(corsConfigurationSource()))
+                .csrf((csrf) -> csrf.csrfTokenRequestHandler(requestHandler)
+                        .ignoringRequestMatchers("/api/**", "/h2/**", "/v2/api-docs", "/swagger-resources/**", "/swagger-ui/**", "/webjars/**", "/v3/api-docs/**")
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+
                 )
-                .authorizeHttpRequests((authorize) -> authorize
-                        .requestMatchers("/h2/**","/api/users/getAll", "/api/users/register").permitAll()
+                .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
+                .addFilterBefore(new RequestValidationBeforeFilter(), BasicAuthenticationFilter.class)
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/h2/**").permitAll()
+                                .requestMatchers("/api/**").permitAll()
+//                        .requestMatchers("/api/users/getAll").hasRole("ADMIN")
+//                        .requestMatchers("/api/users/register").hasRole("ADMIN")
+//                        .requestMatchers("api/reservations/getAll").hasRole("ADMIN")
+//                        .requestMatchers("api/reservations/available").hasRole("ADMIN")
+//                        .requestMatchers("api/users/**").hasRole("ADMIN")
+//                        .requestMatchers("/api/users/**").hasRole("USER")
                         .anyRequest().authenticated()
                 )
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
@@ -38,6 +55,21 @@ public class SecurityConfig {
                 .formLogin(Customizer.withDefaults());
 
         return (SecurityFilterChain)http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Collections.singletonList("http://localhost:8080"));
+        configuration.setAllowedMethods(Collections.singletonList("*"));
+        configuration.setAllowCredentials(true);
+        configuration.setAllowedHeaders(Collections.singletonList("*"));
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+
+        return source;
     }
 
     @Bean

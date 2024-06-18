@@ -2,6 +2,8 @@ package com.internship.backend.service;
 
 import com.internship.backend.dto.ReservationDTO;
 import com.internship.backend.exceptions.ReservationAlreadyExists;
+import com.internship.backend.exceptions.ReservationDoesNotExistException;
+import com.internship.backend.model.NewDate;
 import com.internship.backend.model.Reservation;
 import com.internship.backend.model.TennisCourt;
 import com.internship.backend.model.Users;
@@ -11,10 +13,12 @@ import com.internship.backend.repository.TennisCourtRepository;
 import com.internship.backend.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ReservationService {
@@ -27,6 +31,7 @@ public class ReservationService {
 
     @Autowired
     private TennisCourtRepository tennisCourtRepository;
+
     @Autowired
     private PriceRepository priceRepository;
 
@@ -36,50 +41,50 @@ public class ReservationService {
 
     public Reservation addReservation(Reservation reservation) throws ReservationAlreadyExists {
 
-        /*for (Reservation elem : reservationRepository.findAll()){
-            if(elem.getDay() == reservation.getDay() && elem.getMonth() == reservation.getMonth() && elem.getYear() == reservation.getYear()
-            && elem.getStartHour() == reservation.getStartHour() && elem.getEndHour() == reservation.getEndHour()){
-                throw new ReservationAlreadyExists("Reservation already exists");
-            }
-        }*/
-        return reservationRepository.save(reservation);
+        if (isValidReservation((reservation)))
+        {
+            return reservationRepository.save(reservation);
+        }
+        else{
+            throw new ReservationAlreadyExists("Reservation intersects another one");
+        }
     }
+
+    public boolean isValidReservation(Reservation reservation){
+        List<Reservation> reservationList = reservationRepository.findAll();
+        for(Reservation elem : reservationList){
+            if((reservation.getStartTime().isAfter(elem.getEndTime()) || reservation.getStartTime().equals(elem.getEndTime()))
+            && (reservation.getEndTime().isBefore(elem.getStartTime()) || reservation.getEndTime().equals(elem.getStartTime()))){
+                return true;
+            }
+            else return false;
+        }
+        return true;
+    }
+
 
     public Reservation fromDTO(ReservationDTO reservationDTO) {
         Reservation reservation = new Reservation();
-        reservation.setId(reservationDTO.getId());
+        int userId = reservationDTO.getUserId();
+        Optional<Users> user = userRepository.findById(userId);
+        reservation.setUser(user.get());
+
         reservation.setStartTime(reservationDTO.getStartTime());
         reservation.setEndTime(reservationDTO.getEndTime());
 
-//        reservation.setYear(reservationDTO.getYear());
-//        reservation.setMonth(reservationDTO.getMonth());
-//        reservation.setDay(reservationDTO.getDay());
-//        reservation.setStartHour(reservationDTO.getStartHour());
-//        reservation.setEndHour(reservationDTO.getEndHour());
+        int tennisCourtId = reservationDTO.getTennisCourtId();
+        Optional<TennisCourt> tennisCourt = tennisCourtRepository.findById(tennisCourtId);
+        reservation.setTennisCourt(tennisCourt.get());
 
-        for(Users user: userRepository.findAll()) {
-            if(user.getId() == reservationDTO.getId()) reservation.setUser(user);
-        }
-
-        for(TennisCourt tennisCourt: tennisCourtRepository.findAll()){
-            if(tennisCourt.getId() == reservationDTO.getId()) reservation.setTennisCourt(tennisCourt);
-        }
         return reservation;
 
     }
 
-    public Reservation update(int reservationId, Reservation newReservation){
-        Reservation reservation = reservationRepository.findById(reservationId).orElseThrow(()->new EntityNotFoundException("Reservation not found"));
+    public Reservation update(int reservationId, Reservation newReservation) throws ReservationAlreadyExists {
+        Reservation reservation = reservationRepository.findById(reservationId).orElseThrow(()->new ReservationAlreadyExists("Reservation not found"));
 
         reservation.setStartTime(newReservation.getStartTime());
         reservation.setEndTime(newReservation.getEndTime());
-
-//        reservation.setYear(reservation.getYear());
-//        reservation.setMonth(reservation.getMonth());
-//        reservation.setDay(reservation.getDay());
-//        reservation.setStartHour(reservation.getStartHour());
-//        reservation.setEndHour(reservation.getEndHour());
-
         if(reservationRepository.count()==0){
             reservationRepository.resetAutoIncrementId();
         }
@@ -87,28 +92,36 @@ public class ReservationService {
         return reservationRepository.save(reservation);
     }
 
-    public void delete(int reservationId){
+    public void delete(int reservationId) throws ReservationDoesNotExistException {
         if(!reservationRepository.existsById(reservationId))
-            throw new RuntimeException("Reservation not found");
+            throw new ReservationDoesNotExistException("Reservation not found");
         priceRepository.deleteById(reservationId);
     }
 
-   /* public List<Integer> getReservationsByDate(int month, int day, int startHour, int endHour){
 
+
+    //metoda in care user-ul sa vada toate terenurile disponibile dintr-o anumita data
+   public List<TennisCourt> getAvailableTennisCourts(NewDate startDate, NewDate endDate){
+        int tennisCourtId;
+        List<TennisCourt> tennisCourts = tennisCourtRepository.findAll();
         List<Reservation> reservations = reservationRepository.findAll();
-        List<Integer> tennisCourts = new ArrayList<>();
-        for(Reservation reservation: reservations){
 
-            if(reservation.getMonth() == reservations.get(month).getMonth() &&
-                    reservation.getDay() == reservations.get(day).getDay() &&
-                    reservation.getStartHour() == reservations.get(startHour).getStartHour()
-                    && reservation.getEndHour() == reservations.get(endHour).getEndHour()){
+        for (Reservation elem : reservations){
+            if(( elem.getStartTime().equals(startDate) &&  elem.getEndTime().equals(endDate))
+                    || (elem.getStartTime().isBefore(endDate) && endDate.isBefore(elem.getEndTime()))
+                    || (elem.getStartTime().isBefore(startDate) && startDate.isBefore(elem.getEndTime())))
+            {
+                tennisCourtId = elem.getTennisCourt().getId();
 
-                tennisCourts.add(reservation.getId());
+                for (int i = 0; i < tennisCourts.size(); i++) {
+                    if (tennisCourts.get(i).getId() == tennisCourtId) {
+                        tennisCourts.remove(i);
+                    }
+                }
             }
         }
         return tennisCourts;
-    }*/
+    }
 
 }
 

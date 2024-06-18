@@ -1,10 +1,10 @@
 package com.internship.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
 
 @Entity
 @Setter
@@ -15,22 +15,37 @@ public class Reservation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
+
     @ManyToOne
     @JoinColumn(name = "users_id")
     private Users user;
-
+    
     @ManyToOne
     @JoinColumn(name = "tennis_court_id")
     private TennisCourt tennisCourt;
 
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "minute", column = @Column(name = "start_minute")),
+            @AttributeOverride(name = "hour", column = @Column(name = "start_hour")),
+            @AttributeOverride(name = "day", column = @Column(name = "start_day")),
+            @AttributeOverride(name = "month", column = @Column(name = "start_month")),
+            @AttributeOverride(name = "year", column = @Column(name = "start_year"))
+    })
+    private NewDate startTime;
 
-//    private int year;
-//    private int month;
-//    private int day;
-//    private int startHour;
-//    private int endHour;
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "minute", column = @Column(name = "end_minute")),
+            @AttributeOverride(name = "hour", column = @Column(name = "end_hour")),
+            @AttributeOverride(name = "day", column = @Column(name = "end_day")),
+            @AttributeOverride(name = "month", column = @Column(name = "end_month")),
+            @AttributeOverride(name = "year", column = @Column(name = "end_year"))
+    })
+    private NewDate endTime;
+
+
+
 }
 
 //endpoint in care user-ul sa vada toate terenurile disponibile dintr-o anumita data

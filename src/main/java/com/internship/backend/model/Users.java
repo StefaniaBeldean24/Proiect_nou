@@ -3,7 +3,7 @@ package com.internship.backend.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.internship.backend.enums.Role;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -11,6 +11,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.util.List;
 import java.util.Set;
 
 
@@ -23,8 +24,6 @@ import java.util.Set;
 @Builder
 public class Users {
 
-    @Enumerated(EnumType.STRING)
-    private Role role;
 
     @NotNull(message="id must not be null")
     @Id
@@ -35,6 +34,7 @@ public class Users {
     @Size(min=4, max=10, message="username must be between 4 and 10 characters")
     private String username;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @NotBlank
     @Size(min=8, max=255, message = "password must be between 8 and 30 characters")
     private String password;
@@ -52,9 +52,14 @@ public class Users {
         return id == users.id && username.equals(users.username) && password.equals(users.password) && email.equals(users.email);
     }
 
+    //@JsonIgnore
     @JsonManagedReference
     @OneToMany(mappedBy="user", fetch = FetchType.EAGER)
     private Set<Authority> authorities;
+
+    @JsonIgnore
+    @OneToMany(mappedBy="user", fetch = FetchType.EAGER)
+    private List<Reservation> reservations;
 
     @Override
     public int hashCode() {
@@ -69,7 +74,6 @@ public class Users {
     public String toString() {
         return "Users{" +
                 "id=" + id +
-                ", rights='" + role + '\'' +
                 ", username='" + username + '\'' +
                 ", password='" + password + '\'' +
                 ", email='" + email + '\'' +
