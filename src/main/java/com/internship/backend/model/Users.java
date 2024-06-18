@@ -1,16 +1,18 @@
 package com.internship.backend.model;
 
 
-import com.internship.backend.enums.Role;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+
+import java.util.List;
+import java.util.Set;
 
 
 @Entity
@@ -19,12 +21,9 @@ import lombok.Setter;
 @Setter
 @Getter
 @Valid
+@Builder
 public class Users {
 
-    //@NotBlank
-    //@NotNull(message="enter ADMIN or CLIENT")
-    @Enumerated(EnumType.STRING)
-    private Role rights;
 
     @NotNull(message="id must not be null")
     @Id
@@ -35,12 +34,13 @@ public class Users {
     @Size(min=4, max=10, message="username must be between 4 and 10 characters")
     private String username;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @NotBlank
-    @Size(min=8, max=30, message = "password must be between 8 and 30 characters")
+    @Size(min=8, max=255, message = "password must be between 8 and 30 characters")
     private String password;
 
     @NotBlank
-    @Size(min=8, max=30, message= "email must be between 8 and 30 characters")
+    @Size(min=6, max=30, message= "email must be between 6 and 30 characters")
     private String email;
 
     @Override
@@ -51,6 +51,15 @@ public class Users {
         Users users = (Users) o;
         return id == users.id && username.equals(users.username) && password.equals(users.password) && email.equals(users.email);
     }
+
+    //@JsonIgnore
+    @JsonManagedReference
+    @OneToMany(mappedBy="user", fetch = FetchType.EAGER)
+    private Set<Authority> authorities;
+
+    @JsonIgnore
+    @OneToMany(mappedBy="user", fetch = FetchType.EAGER)
+    private List<Reservation> reservations;
 
     @Override
     public int hashCode() {
@@ -65,7 +74,6 @@ public class Users {
     public String toString() {
         return "Users{" +
                 "id=" + id +
-                ", rights='" + rights + '\'' +
                 ", username='" + username + '\'' +
                 ", password='" + password + '\'' +
                 ", email='" + email + '\'' +

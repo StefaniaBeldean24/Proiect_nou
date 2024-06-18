@@ -1,6 +1,8 @@
 package com.internship.backend.controller;
 
 import com.internship.backend.dto.LocationDTO;
+import com.internship.backend.exceptions.LocationAlreadyExistsException;
+import com.internship.backend.exceptions.LocationDoesNotExistException;
 import com.internship.backend.model.Location;
 import com.internship.backend.service.LocationService;
 import jakarta.persistence.EntityNotFoundException;
@@ -27,22 +29,28 @@ public class LocationController {
     private LocationService locationService;
 
     @PostMapping("/add")
-    public Location addLocation(@RequestBody LocationDTO locationDTO) {
-        //if user is admin
-        Location baseLocation = locationService.fromDTO(locationDTO);
-        baseLocation = locationService.addLocation(baseLocation);
-        //else throw error
-        return new ResponseEntity<>(baseLocation, HttpStatus.CREATED).getBody();
+    public ResponseEntity<Location> addLocation(@RequestBody LocationDTO locationDTO){
+        try{
+            Location baseLocation = locationService.fromDTO(locationDTO);
+            baseLocation = locationService.addLocation(baseLocation);
+            Log.info("Added location " + baseLocation.getName());
+            return ok(baseLocation);
+        }catch (LocationAlreadyExistsException e)
+        {
+            Log.error(e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+        }
     }
 
     @GetMapping("/getAll")
     public ResponseEntity<List<Location>> getAllLocations() {
         Optional<List<Location>> location = Optional.ofNullable(locationService.getAllLocations());
         if(location.isPresent()) {
-            Log.info("Get all: ", location.toString());
+            Log.info("Get all: ", location);
             return ok(locationService.getAllLocations());
         }
         else {
+            Log.error("No location found");
             return notFound().build();
         }
     }
@@ -52,9 +60,9 @@ public class LocationController {
         try{
             Location location = locationService.fromDTO(locationDTO);
             Optional<Location> updatedLocation = Optional.ofNullable(locationService.update(locationId, location));
-            Log.info("Updating location: " ,location.toString());
+            Log.info("Updating location: " ,location);
             return ok(updatedLocation.get());
-        }catch(EntityNotFoundException e){
+        }catch(LocationDoesNotExistException e){
             Log.error("Error processing update "+ e.getMessage());
             return ResponseEntity.notFound().build();
         }
@@ -66,7 +74,7 @@ public class LocationController {
             Log.info("Deleting location: ", locationID);
             locationService.delete(locationID);
             return ResponseEntity.ok().build();
-        }catch (RuntimeException e){
+        }catch (LocationDoesNotExistException e){
             Log.error("Error processing delete ", e.getMessage());
             return ResponseEntity.notFound().build();
         }

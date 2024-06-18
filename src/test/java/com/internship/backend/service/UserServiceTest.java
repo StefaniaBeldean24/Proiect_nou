@@ -115,7 +115,7 @@ public class UserServiceTest {
     }
 
     @Test
-    public void testDeleteUser_Success() {
+    public void testDeleteUser_Success() throws UserDoesNotExistException {
         when(userRepository.existsById(1)).thenReturn(true);
 
         userService.delete(1);
