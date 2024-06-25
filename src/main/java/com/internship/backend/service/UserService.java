@@ -7,8 +7,11 @@ import com.internship.backend.model.Authority;
 import com.internship.backend.model.Users;
 import com.internship.backend.repository.AuthorityRepository;
 import com.internship.backend.repository.UserRepository;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.MapReactiveUserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +22,7 @@ import java.util.Set;
 
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
     @Autowired
@@ -30,6 +34,18 @@ public class UserService {
 
     @Autowired
     private AuthorityRepository authorityRepository;
+    private MapReactiveUserDetailsService reactiveUserDetailsService;
+
+    @Transactional
+    public List<Users> getAllUsersProcedure(){
+        return userRepository.getAllUsersProcedure();
+    }
+
+    @Transactional
+    public void deleteUserByIdProcedure(Integer userId){
+        authorityRepository.deleteByUserId(userId);
+        userRepository.deleteUserByIdProcedure(userId);
+    }
 
     public Users register(Users user) throws UserAlreadyExistsException {
         if (userRepository.findByUsername(user.getUsername()) != null) {
@@ -70,21 +86,9 @@ public class UserService {
         return user;
     }
 
-    public UserDTO toDTO(Users user){
-        String role = user.getAuthorities().iterator().next().getName();
-
-        return UserDTO.builder()
-                .role(role)
-                .username(user.getUsername())
-                .password(user.getPassword())
-                .email(user.getEmail())
-                .build();
-    }
-
     public Users update(int userId, Users updatedUser) throws UserDoesNotExistException {
         Users user = userRepository.findById(userId).orElseThrow(() -> new UserDoesNotExistException("User not found"));
 
-        //user.setRole(updatedUser.getRole());
         user.setUsername(updatedUser.getUsername());
         user.setPassword(updatedUser.getPassword());
         user.setEmail(updatedUser.getEmail());

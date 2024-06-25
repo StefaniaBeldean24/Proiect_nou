@@ -1,8 +1,10 @@
 package com.internship.backend.service;
 
 import com.internship.backend.dto.ReservationDTO;
+import com.internship.backend.exceptions.InvalidDateException;
 import com.internship.backend.exceptions.ReservationAlreadyExists;
 import com.internship.backend.exceptions.ReservationDoesNotExistException;
+import com.internship.backend.exceptions.TennisCourtDoesNotExistsException;
 import com.internship.backend.model.NewDate;
 import com.internship.backend.model.Reservation;
 import com.internship.backend.model.TennisCourt;
@@ -11,12 +13,9 @@ import com.internship.backend.repository.PriceRepository;
 import com.internship.backend.repository.ReservationRepository;
 import com.internship.backend.repository.TennisCourtRepository;
 import com.internship.backend.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,7 +38,23 @@ public class ReservationService {
         return reservationRepository.findAll();
     }
 
-    public Reservation addReservation(Reservation reservation) throws ReservationAlreadyExists {
+    public Reservation addReservation(Reservation reservation) throws ReservationAlreadyExists, InvalidDateException {
+
+        if (reservation.getStartTime().getMonth() != reservation.getEndTime().getMonth()) {
+            throw new InvalidDateException("The start date and end date must be within the same month");
+        }
+
+        if(reservation.getStartTime().getDay() != reservation.getEndTime().getDay()){
+            throw new InvalidDateException("The start date and end date must be within the same day");
+        }
+
+        if(reservation.getStartTime().getYear() != reservation.getEndTime().getYear()){
+            throw new InvalidDateException("The start date and end date must be within the same year");
+        }
+
+        if(reservation.getEndTime().getHour() - reservation.getStartTime().getHour() != 2){
+            throw new InvalidDateException("The reservation duration must be exactly 2 hours");
+        }
 
         if (isValidReservation((reservation)))
         {
@@ -53,11 +68,11 @@ public class ReservationService {
     public boolean isValidReservation(Reservation reservation){
         List<Reservation> reservationList = reservationRepository.findAll();
         for(Reservation elem : reservationList){
-            if((reservation.getStartTime().isAfter(elem.getEndTime()) || reservation.getStartTime().equals(elem.getEndTime()))
-            && (reservation.getEndTime().isBefore(elem.getStartTime()) || reservation.getEndTime().equals(elem.getStartTime()))){
-                return true;
+            if(elem.getTennisCourt().getId() == reservation.getTennisCourt().getId()) {
+                if (!(reservation.getEndTime().isBefore(elem.getStartTime()) || reservation.getStartTime().isAfter(elem.getEndTime()))) {
+                    return false;
+                }
             }
-            else return false;
         }
         return true;
     }
@@ -98,13 +113,27 @@ public class ReservationService {
         priceRepository.deleteById(reservationId);
     }
 
-
-
     //metoda in care user-ul sa vada toate terenurile disponibile dintr-o anumita data
-   public List<TennisCourt> getAvailableTennisCourts(NewDate startDate, NewDate endDate){
+   public List<TennisCourt> getAvailableTennisCourts(NewDate startDate, NewDate endDate) throws TennisCourtDoesNotExistsException, InvalidDateException {
         int tennisCourtId;
         List<TennisCourt> tennisCourts = tennisCourtRepository.findAll();
         List<Reservation> reservations = reservationRepository.findAll();
+
+        if (startDate.getMonth() != endDate.getMonth()) {
+            throw new InvalidDateException("The start date and end date must be within the same month");
+        }
+
+        if(startDate.getDay() != endDate.getDay()){
+            throw new InvalidDateException("The start date and end date must be within the same day");
+        }
+
+        if(startDate.getYear() != endDate.getYear()){
+            throw new InvalidDateException("The start date and end date must be within the same year");
+        }
+
+        if(endDate.getHour() - startDate.getHour() != 2){
+            throw new InvalidDateException("The reservation duration must be exactly 2 hours");
+        }
 
         for (Reservation elem : reservations){
             if(( elem.getStartTime().equals(startDate) &&  elem.getEndTime().equals(endDate))
@@ -120,7 +149,12 @@ public class ReservationService {
                 }
             }
         }
-        return tennisCourts;
+        if(!tennisCourts.isEmpty()){
+            return tennisCourts;
+        }
+        else{
+            throw new TennisCourtDoesNotExistsException("No tennis courts available");
+        }
     }
 
 }

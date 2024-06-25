@@ -1,8 +1,10 @@
 package com.internship.backend.controller;
 
 import com.internship.backend.dto.ReservationDTO;
+import com.internship.backend.exceptions.InvalidDateException;
 import com.internship.backend.exceptions.ReservationAlreadyExists;
 import com.internship.backend.exceptions.ReservationDoesNotExistException;
+import com.internship.backend.exceptions.TennisCourtDoesNotExistsException;
 import com.internship.backend.model.*;
 import com.internship.backend.service.ReservationService;
 import org.slf4j.Logger;
@@ -18,6 +20,7 @@ import java.util.Optional;
 import static org.springframework.http.ResponseEntity.notFound;
 import static org.springframework.http.ResponseEntity.ok;
 
+
 @RestController
 @RequestMapping("api/reservations")
 public class ReservationController {
@@ -28,10 +31,18 @@ public class ReservationController {
     private ReservationService reservationService;
 
     @PostMapping("/add")
-    public Reservation addReservation(@RequestBody ReservationDTO reservationDTO) throws ReservationAlreadyExists {
-        Reservation reservation = reservationService.fromDTO(reservationDTO);
-        reservationService.addReservation(reservation);
-        return new ResponseEntity<>(reservation, HttpStatus.CREATED).getBody();
+    public ResponseEntity<Reservation> addReservation(@RequestBody ReservationDTO reservationDTO) {
+        try{
+            Reservation reservation = reservationService.fromDTO(reservationDTO);
+            reservationService.addReservation(reservation);
+            return ok(reservation);
+        }catch(ReservationAlreadyExists e){
+            Log.error("Reservation already exists " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }catch(InvalidDateException e){
+            Log.error("Invalid date "+ e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
     }
 
     @GetMapping("/getAll")
@@ -47,8 +58,18 @@ public class ReservationController {
 
     @PostMapping("/available")
     public ResponseEntity<List<TennisCourt>> getAvailableTennisCourts(@RequestBody DateRangeRequest dateRangeRequest) {
-        List<TennisCourt> availableTennisCourts = reservationService.getAvailableTennisCourts(dateRangeRequest.getStartDate(), dateRangeRequest.getEndDate());
-        return ResponseEntity.ok(availableTennisCourts);
+        try{
+            List<TennisCourt> availableTennisCourts = reservationService.getAvailableTennisCourts(dateRangeRequest.getStartDate(), dateRangeRequest.getEndDate());
+            return ResponseEntity.ok(availableTennisCourts);
+        }catch(TennisCourtDoesNotExistsException e){
+            Log.error("No available tennis courts "+e.getMessage());
+            return ResponseEntity.notFound().build();
+        }catch (InvalidDateException e){
+            Log.error("Invalid date " + e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
+
+
     }
 
     @PutMapping("/update/{id}")

@@ -6,6 +6,7 @@ import com.internship.backend.exceptions.UserDoesNotExistException;
 import com.internship.backend.model.Users;
 import com.internship.backend.service.UserService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,12 +25,19 @@ import static org.springframework.http.ResponseEntity.ok;
 
 @RestController
 @RequestMapping("api/users")
+@RequiredArgsConstructor
 public class UserController {
 
     Logger Log = LoggerFactory.getLogger(UserController.class);
 
     @Autowired
     private UserService userService;
+
+
+    @GetMapping("/getAllUsersProcedure")
+    public List<Users> getAllUsersProcedure() {
+        return userService.getAllUsersProcedure();
+    }
 
     @GetMapping("/getAll")
     public ResponseEntity<List<Users>> getAll(){
@@ -106,6 +114,11 @@ public class UserController {
             Log.error("Error processing delete "+ e.getMessage());
             return notFound().build();
         }
+    }
+
+    @DeleteMapping("/deleteUserByIdProcedure/{id}")
+    public void deleteUserByIdProcedure(@PathVariable("id") int userId){
+        userService.deleteUserByIdProcedure(userId);
     }
 
 }

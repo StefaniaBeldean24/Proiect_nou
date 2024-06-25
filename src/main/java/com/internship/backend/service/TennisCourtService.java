@@ -7,7 +7,6 @@ import com.internship.backend.model.Location;
 import com.internship.backend.model.TennisCourt;
 import com.internship.backend.repository.LocationRepository;
 import com.internship.backend.repository.TennisCourtRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -26,12 +25,12 @@ public class TennisCourtService {
     }
 
     public TennisCourt addTennisCourt(TennisCourt tennisCourt) throws TennisCourtAlreadyExistsException {
-        for (Location elem : locationRepository.findAll()){
-            if (elem.getId() == tennisCourt.getLocation().getId()){
-                if (!elem.getTennisCourt().contains(tennisCourt)) {
-                    List<TennisCourt> aux = elem.getTennisCourt();
-                    aux.add(tennisCourt);
-                    elem.setTennisCourt(aux);
+        for (Location location : locationRepository.findAll()){
+            if (location.getId() == tennisCourt.getLocation().getId()){
+                if (!location.getTennisCourt().contains(tennisCourt)) {
+                    List<TennisCourt> tennisCourtList = location.getTennisCourt();
+                    tennisCourtList.add(tennisCourt);
+                    location.setTennisCourt(tennisCourtList);
                 }
                 else{
                     throw new TennisCourtAlreadyExistsException("TennisCourt already exists");

@@ -16,6 +16,9 @@ import java.util.Set;
 
 
 @Entity
+@NamedStoredProcedureQuery(name = "Users.getAllUsersProcedure",
+procedureName = "getAllUsersProcedure")
+
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter
@@ -54,11 +57,11 @@ public class Users {
 
     //@JsonIgnore
     @JsonManagedReference
-    @OneToMany(mappedBy="user", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy="user", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
     private Set<Authority> authorities;
 
     @JsonIgnore
-    @OneToMany(mappedBy="user", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy="user", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
     private List<Reservation> reservations;
 
     @Override

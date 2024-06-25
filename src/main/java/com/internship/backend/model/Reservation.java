@@ -1,6 +1,5 @@
 package com.internship.backend.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -43,10 +42,4 @@ public class Reservation {
             @AttributeOverride(name = "year", column = @Column(name = "end_year"))
     })
     private NewDate endTime;
-
-
-
 }
-
-//endpoint in care user-ul sa vada toate terenurile disponibile dintr-o anumita data
-//
