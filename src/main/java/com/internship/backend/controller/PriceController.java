@@ -1,6 +1,7 @@
 package com.internship.backend.controller;
 
 import com.internship.backend.dto.PriceDTO;
+import com.internship.backend.exceptions.PriceIdDoesNotExistException;
 import com.internship.backend.model.Price;
 import com.internship.backend.service.PriceService;
 import jakarta.persistence.EntityNotFoundException;
@@ -52,7 +53,7 @@ public class PriceController {
             Log.info("Get all"+ price.toString());
             return ok(updatedPrice.get());
         }
-        catch(EntityNotFoundException e){
+        catch(PriceIdDoesNotExistException e){
             Log.error("Error processing update "+e.getMessage());
             return ResponseEntity.notFound().build();
         }

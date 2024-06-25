@@ -1,6 +1,7 @@
 package com.internship.backend.service;
 
 import com.internship.backend.dto.PriceDTO;
+import com.internship.backend.exceptions.PriceIdDoesNotExistException;
 import com.internship.backend.model.Price;
 import com.internship.backend.model.TennisCourt;
 import com.internship.backend.repository.PriceRepository;
@@ -43,8 +44,8 @@ public class PriceService {
         return price;
     }
 
-    public Price update(int priceId, Price updatedPrice){
-        Price price = priceRepository.findById(priceId).orElseThrow(()-> new EntityNotFoundException("Price not found"));
+    public Price update(int priceId, Price updatedPrice) throws PriceIdDoesNotExistException {
+        Price price = priceRepository.findById(priceId).orElseThrow(()-> new PriceIdDoesNotExistException("Price not found"));
 
         price.setPrice(updatedPrice.getPrice());
         price.setSeason(updatedPrice.getSeason());

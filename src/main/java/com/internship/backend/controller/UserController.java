@@ -1,23 +1,22 @@
 package com.internship.backend.controller;
 
+import com.internship.backend.dto.UserDTO;
 import com.internship.backend.exceptions.UserAlreadyExistsException;
 import com.internship.backend.exceptions.UserDoesNotExistException;
 import com.internship.backend.model.Users;
-import com.internship.backend.service.AdminService;
 import com.internship.backend.service.UserService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.springframework.http.ResponseEntity.notFound;
@@ -26,6 +25,7 @@ import static org.springframework.http.ResponseEntity.ok;
 
 @RestController
 @RequestMapping("api/users")
+@RequiredArgsConstructor
 public class UserController {
 
     Logger Log = LoggerFactory.getLogger(UserController.class);
@@ -33,14 +33,16 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @Autowired
-    private AdminService adminService;
 
+    @GetMapping("/getAllUsersProcedure")
+    public List<Users> getAllUsersProcedure() {
+        return userService.getAllUsersProcedure();
+    }
 
     @GetMapping("/getAll")
     public ResponseEntity<List<Users>> getAll(){
         Optional<List<Users>> users = Optional.ofNullable(userService.getAllUsers());
-        if(users.isPresent()) {
+        if(users.isPresent() && !users.get().isEmpty()) {
             Log.info("Get all" + userService.getAllUsers().toString());
             return ok(userService.getAllUsers());
         }
@@ -51,25 +53,29 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<Users> registerUser(@Valid @RequestBody Users users) {
-        try{
-            Optional<Users> newUser = Optional.ofNullable(userService.register(users));
-            if(newUser.isPresent()) {
-                Log.info("Registered user: {}", newUser.get());
-                return ResponseEntity.ok().build();
+    public ResponseEntity<Users> registerUser(@Valid @RequestBody UserDTO userDTO) {
+        try {
+            Users newUser = userService.register(userService.fromDTO(userDTO));
+            //Optional<Users> newUser = Optional.ofNullable(userService.register(user));
+            if (!Objects.isNull(newUser)) {
+                Log.info("Registered user: {}", newUser);
+                return ok(newUser);
             }
-            else return ResponseEntity.status(HttpStatus.CONFLICT).build();
-        }catch (UserAlreadyExistsException e){
+            else{
+                Log.error("Registration failed");
+                return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            }
+        } catch (UserAlreadyExistsException e) {
             Log.error(e.getMessage());
             return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
-        }catch (Exception e){
-            Log.error("Wrong role!");
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+        } catch (Exception e) {
+            Log.error("Error during registration: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> loginUser(@Valid @RequestBody Users loginDetails) {
+    public ResponseEntity<?> loginUser(@Valid @RequestBody Users loginDetails) {//dto
         try{
             Optional<Users> users = Optional.ofNullable(userService.login(loginDetails.getUsername(), loginDetails.getPassword()));
             if (users.isPresent()) {
@@ -77,7 +83,7 @@ public class UserController {
                 return ok(users);
             }
             else {
-                Log.error("Login failed for user: " + loginDetails.toString());
+                Log.error("Login failed for user: " + loginDetails);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
             }
         }catch (Exception e){
@@ -90,11 +96,11 @@ public class UserController {
     public ResponseEntity<Users> updateUser(@PathVariable("id") int userId, @Valid @RequestBody Users user) {
         try{
             Optional<Users> updatedUser = Optional.ofNullable(userService.update(userId, user));
-            Log.info("Updating user: " + user.toString());
+            Log.info("Updating user: " + user);
             return ok(updatedUser.get());
         }catch (UserDoesNotExistException e){
             Log.error("Error processing update "+ e.getMessage());
-            return ResponseEntity.notFound().build();
+            return notFound().build();
         }
     }
 
@@ -103,41 +109,16 @@ public class UserController {
         try{
             Log.info("Deleting user: " + userId);
             userService.delete(userId);
-            return ResponseEntity.ok().build();
-        }catch (RuntimeException e){
+            return ok().build();
+        }catch (RuntimeException | UserDoesNotExistException e){
             Log.error("Error processing delete "+ e.getMessage());
-            return ResponseEntity.notFound().build();
+            return notFound().build();
         }
     }
 
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public Map<String, String> handleValidationExceptions(MethodArgumentNotValidException ex){
-        Map <String, String> errors = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach((error)-> {
-            String fieldName = ((FieldError) error).getField();
-            String errorMessage = error.getDefaultMessage();
-            Object rejectedValue = ((FieldError) error).getRejectedValue();
-            errors.put(fieldName, errorMessage);
-            Log.error("Validation error for field '{}': , Rejected value: '{}'", fieldName, rejectedValue);
-        });
-        return errors;
+    @DeleteMapping("/deleteUserByIdProcedure/{id}")
+    public void deleteUserByIdProcedure(@PathVariable("id") int userId){
+        userService.deleteUserByIdProcedure(userId);
     }
-
-
-
-    /*@PostMapping("/tennis-courts")
-    public TennisCourt addTennisCourt(@RequestBody TennisCourt tennisCourt) {
-        return adminService.addTennisCourt(tennisCourt);
-    }
-
-    @PostMapping("/price")
-    public Price addPrice(@RequestBody PriceDTO priceDTO) {
-        Price savedPrice = adminService.addPrice(priceDTO);
-        //return adminService.addPrice(price);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedPrice).getBody();
-    }*/
-
-
 
 }
