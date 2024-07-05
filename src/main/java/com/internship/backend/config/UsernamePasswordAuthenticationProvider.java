@@ -14,10 +14,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 @Component
 public class UsernamePasswordAuthenticationProvider implements AuthenticationProvider {
@@ -32,8 +29,9 @@ public class UsernamePasswordAuthenticationProvider implements AuthenticationPro
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String username = authentication.getName();
         String password = authentication.getCredentials().toString();
-        Users user = userRepository.findByUsername(username);
-        if(!Objects.isNull(user) ){
+        Optional<Users> optionalUser = userRepository.findByUsername(username);
+        if(optionalUser.isPresent()){
+            Users user = optionalUser.get();
             if(passwordEncoder.matches(password, user.getPassword())){
                 return new UsernamePasswordAuthenticationToken(username, password, getGrantedAuthorities(user.getAuthorities()));
             }

@@ -1,50 +1,53 @@
 package com.internship.backend.model;
 
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.*;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
-import lombok.*;
+
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.data.couchbase.core.mapping.Field;
+
 
 import java.util.List;
 import java.util.Set;
 
-
-@Entity
-@NamedStoredProcedureQuery(name = "Users.getAllUsersProcedure",
-procedureName = "getAllUsersProcedure")
-
-@NoArgsConstructor
-@AllArgsConstructor
-@Setter
+@Document
 @Getter
-@Valid
-@Builder
+@Setter
 public class Users {
 
-
-    @NotNull(message="id must not be null")
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
 
-    @NotBlank
-    @Size(min=4, max=10, message="username must be between 4 and 10 characters")
+    @Field
     private String username;
 
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    @NotBlank
-    @Size(min=8, max=255, message = "password must be between 8 and 30 characters")
+    @Field
     private String password;
 
-    @NotBlank
-    @Size(min=6, max=30, message= "email must be between 6 and 30 characters")
+    @Field
     private String email;
+
+    @Field
+    private Set<Authority> authorities;
+
+    @Field
+    //@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private List<Reservation> reservations;
+
+
+    public Users(String username, String password, String email, Set<Authority> authorities) {
+        this.username = username;
+        this.password = password;
+        this.email = email;
+        this.authorities = authorities;
+    }
+
+    public Users() {
+
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -55,23 +58,6 @@ public class Users {
         return id == users.id && username.equals(users.username) && password.equals(users.password) && email.equals(users.email);
     }
 
-    //@JsonIgnore
-    @JsonManagedReference
-    @OneToMany(mappedBy="user", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
-    private Set<Authority> authorities;
-
-    @JsonIgnore
-    @OneToMany(mappedBy="user", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
-    private List<Reservation> reservations;
-
-    @Override
-    public int hashCode() {
-        int result = id;
-        result = 31 * result + username.hashCode();
-        result = 31 * result + password.hashCode();
-        result = 31 * result + email.hashCode();
-        return result;
-    }
 
     @Override
     public String toString() {
@@ -82,4 +68,5 @@ public class Users {
                 ", email='" + email + '\'' +
                 '}';
     }
+
 }

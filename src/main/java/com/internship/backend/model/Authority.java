@@ -1,25 +1,35 @@
 package com.internship.backend.model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.data.couchbase.core.mapping.Field;
 
-@Entity
-@Table
+@Document
 @Getter
 @Setter
 public class Authority {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
 
+    @Field
     private String name;
 
-    @JsonBackReference
-    @ManyToOne
-    @JoinColumn(name = "users_id")
-    private Users user;
+    public Authority(String roleUser) {
+        this.name = roleUser;
+    }
+
+    public Authority() {
+
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Authority authority = (Authority) o;
+        return name.equals(authority.name);
+    }
 }

@@ -1,23 +1,20 @@
 package com.internship.backend.service;
 
-import com.internship.backend.dto.ReservationDTO;
-import com.internship.backend.exceptions.InvalidDateException;
-import com.internship.backend.exceptions.ReservationAlreadyExists;
-import com.internship.backend.exceptions.ReservationDoesNotExistException;
-import com.internship.backend.exceptions.TennisCourtDoesNotExistsException;
+import com.internship.backend.controller.UserController;
+import com.internship.backend.exceptions.*;
 import com.internship.backend.model.NewDate;
 import com.internship.backend.model.Reservation;
+
 import com.internship.backend.model.TennisCourt;
 import com.internship.backend.model.Users;
-import com.internship.backend.repository.PriceRepository;
 import com.internship.backend.repository.ReservationRepository;
+
 import com.internship.backend.repository.TennisCourtRepository;
 import com.internship.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class ReservationService {
@@ -26,17 +23,14 @@ public class ReservationService {
     private ReservationRepository reservationRepository;
 
     @Autowired
+    private IdGeneratorService idGeneratorService;
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
     private TennisCourtRepository tennisCourtRepository;
 
-    @Autowired
-    private PriceRepository priceRepository;
-
-    public List<Reservation> getAllReservations(){
-        return reservationRepository.findAll();
-    }
 
     public Reservation addReservation(Reservation reservation) throws ReservationAlreadyExists, InvalidDateException {
 
@@ -68,7 +62,7 @@ public class ReservationService {
     public boolean isValidReservation(Reservation reservation){
         List<Reservation> reservationList = reservationRepository.findAll();
         for(Reservation elem : reservationList){
-            if(elem.getTennisCourt().getId() == reservation.getTennisCourt().getId()) {
+            if(elem.getTennisCourtId() == reservation.getTennisCourtId()) {
                 if (!(reservation.getEndTime().isBefore(elem.getStartTime()) || reservation.getStartTime().isAfter(elem.getEndTime()))) {
                     return false;
                 }
@@ -77,44 +71,35 @@ public class ReservationService {
         return true;
     }
 
-
-    public Reservation fromDTO(ReservationDTO reservationDTO) {
-        Reservation reservation = new Reservation();
-        int userId = reservationDTO.getUserId();
-        Optional<Users> user = userRepository.findById(userId);
-        reservation.setUser(user.get());
-
-        reservation.setStartTime(reservationDTO.getStartTime());
-        reservation.setEndTime(reservationDTO.getEndTime());
-
-        int tennisCourtId = reservationDTO.getTennisCourtId();
-        Optional<TennisCourt> tennisCourt = tennisCourtRepository.findById(tennisCourtId);
-        reservation.setTennisCourt(tennisCourt.get());
-
-        return reservation;
-
+    public List<Reservation> getAllReservations() {
+        return reservationRepository.findAll();
     }
 
-    public Reservation update(int reservationId, Reservation newReservation) throws ReservationAlreadyExists {
-        Reservation reservation = reservationRepository.findById(reservationId).orElseThrow(()->new ReservationAlreadyExists("Reservation not found"));
 
-        reservation.setStartTime(newReservation.getStartTime());
-        reservation.setEndTime(newReservation.getEndTime());
-        if(reservationRepository.count()==0){
-            reservationRepository.resetAutoIncrementId();
+    public Optional<Reservation> getReservationById(Integer id) {
+        return reservationRepository.findById(id);
+    }
+
+    public Reservation updateReservation(Integer id, Reservation reservationDetails) throws ReservationDoesNotExistException {
+        Optional<Reservation> optionalReservation = reservationRepository.findById(id);
+        if (optionalReservation.isPresent()) {
+            Reservation reservation = optionalReservation.get();
+            reservation.setUserId(reservationDetails.getUserId());
+            reservation.setTennisCourtId(reservationDetails.getTennisCourtId());
+            reservation.setStartTime(reservationDetails.getStartTime());
+            reservation.setEndTime(reservationDetails.getEndTime());
+            return reservationRepository.save(reservation);
+        } else {
+            throw new ReservationDoesNotExistException("Reservation not found with id " + id);
         }
-
-        return reservationRepository.save(reservation);
     }
 
-    public void delete(int reservationId) throws ReservationDoesNotExistException {
-        if(!reservationRepository.existsById(reservationId))
-            throw new ReservationDoesNotExistException("Reservation not found");
-        priceRepository.deleteById(reservationId);
+    public void deleteReservation(Integer id) throws ReservationDoesNotExistException {
+        reservationRepository.deleteById(id);
     }
 
     //metoda in care user-ul sa vada toate terenurile disponibile dintr-o anumita data
-   public List<TennisCourt> getAvailableTennisCourts(NewDate startDate, NewDate endDate) throws TennisCourtDoesNotExistsException, InvalidDateException {
+    public List<TennisCourt> getAvailableTennisCourts(NewDate startDate, NewDate endDate) throws TennisCourtDoesNotExistsException, InvalidDateException {
         int tennisCourtId;
         List<TennisCourt> tennisCourts = tennisCourtRepository.findAll();
         List<Reservation> reservations = reservationRepository.findAll();
@@ -140,7 +125,7 @@ public class ReservationService {
                     || (elem.getStartTime().isBefore(endDate) && endDate.isBefore(elem.getEndTime()))
                     || (elem.getStartTime().isBefore(startDate) && startDate.isBefore(elem.getEndTime())))
             {
-                tennisCourtId = elem.getTennisCourt().getId();
+                tennisCourtId = elem.getTennisCourtId();
 
                 for (int i = 0; i < tennisCourts.size(); i++) {
                     if (tennisCourts.get(i).getId() == tennisCourtId) {
@@ -158,4 +143,3 @@ public class ReservationService {
     }
 
 }
-

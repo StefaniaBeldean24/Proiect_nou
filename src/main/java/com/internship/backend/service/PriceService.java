@@ -6,7 +6,6 @@ import com.internship.backend.model.Price;
 import com.internship.backend.model.TennisCourt;
 import com.internship.backend.repository.PriceRepository;
 import com.internship.backend.repository.TennisCourtRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,17 +20,21 @@ public class PriceService {
     @Autowired
     private TennisCourtRepository tennisCourtRepository;
 
+    @Autowired
+    private IdGeneratorService idGeneratorService;
+
+
     public List<Price> getAllPrices(){
         return priceRepository.findAll();
     }
 
     public Price addPrice(Price price){
+        price.setId(idGeneratorService.getCurrentId());
         return priceRepository.save(price);
     }
 
     public Price fromDTO(PriceDTO priceDTO){
         Price price = new Price();
-        price.setId(priceDTO.getId());
         price.setSeason(priceDTO.getSeason());
         price.setPeriodOfDay(priceDTO.getPeriodOfDay());
         price.setPrice(priceDTO.getPrice());
@@ -51,9 +54,6 @@ public class PriceService {
         price.setSeason(updatedPrice.getSeason());
         price.setPeriodOfDay(updatedPrice.getPeriodOfDay());
 
-        if (priceRepository.count() == 0) {
-            priceRepository.resetAutoIncrementId();
-        }
 
         return priceRepository.save(price);
 

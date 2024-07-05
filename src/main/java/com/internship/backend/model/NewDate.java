@@ -1,12 +1,13 @@
 package com.internship.backend.model;
 
-import jakarta.persistence.Embeddable;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.couchbase.core.mapping.Document;
 
-@Embeddable
+@Document
 @Setter
 @Getter
 @NoArgsConstructor
@@ -70,5 +71,4 @@ public class NewDate {
     }
 
 }
-
 

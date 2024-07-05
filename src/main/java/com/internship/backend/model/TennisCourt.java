@@ -2,12 +2,14 @@ package com.internship.backend.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import jakarta.persistence.*;
+
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.couchbase.core.mapping.Document;
 
 import java.util.List;
 
-@Entity
+@Document
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter
@@ -15,20 +17,13 @@ import java.util.List;
 public class TennisCourt {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
     private String name;
     private String details;
 
-    //@ToString.Exclude
-    @ManyToOne
-    @JoinColumn(name = "location_id", nullable = false)
-    @JsonBackReference
     private Location location;
 
-    @OneToMany(mappedBy = "tennisCourt", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
     private List<Price> prices;
 
 
