@@ -32,6 +32,26 @@ public class ReservationService {
     private TennisCourtRepository tennisCourtRepository;
 
 
+//    public Reservation createReservation(Reservation reservation) throws UserDoesNotExistException {
+//        reservation.setId(idGeneratorService.getCurrentId());
+//
+//        Optional<Users> optionalUser = userRepository.findById(reservation.getUserId());
+//        if(optionalUser.isPresent()) {
+//            Users user = optionalUser.get();
+//            List<Reservation> reservations = user.getReservations();
+//            if(Objects.isNull(reservations)) {
+//                reservations = new ArrayList<>();
+//            }
+//            reservations.add(reservation);
+//            user.setReservations(reservations);
+//            userRepository.save(user);
+//        }else{
+//            throw new UserDoesNotExistException("User not found with id" + reservation.getUserId());
+//        }
+//
+//        return reservationRepository.save(reservation);
+//    }
+
     public Reservation addReservation(Reservation reservation) throws ReservationAlreadyExists, InvalidDateException {
 
         if (reservation.getStartTime().getMonth() != reservation.getEndTime().getMonth()) {
@@ -52,6 +72,7 @@ public class ReservationService {
 
         if (isValidReservation((reservation)))
         {
+            reservation.setId(idGeneratorService.getCurrentId());
             return reservationRepository.save(reservation);
         }
         else{
