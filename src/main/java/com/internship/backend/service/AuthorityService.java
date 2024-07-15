@@ -1,10 +1,9 @@
 package com.internship.backend.service;
 
-import com.couchbase.client.core.error.UserNotFoundException;
-import com.internship.backend.dto.AuthorityDTO;
+import com.internship.backend.exceptions.AuthorityDoesNotExistException;
 import com.internship.backend.exceptions.UserDoesNotExistException;
 import com.internship.backend.model.Authority;
-import com.internship.backend.model.Users;
+import com.internship.backend.model.User;
 import com.internship.backend.repository.AuthorityRepository;
 
 import com.internship.backend.repository.UserRepository;
@@ -14,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class AuthorityService {
@@ -31,7 +29,7 @@ public class AuthorityService {
     Logger logger = LoggerFactory.getLogger(AuthorityService.class);
 
     public Authority createAuthority(Integer userId, Authority authority) throws UserDoesNotExistException {
-        Users user = userRepository.findById(userId).orElseThrow(()->new UserDoesNotExistException("User not found"));
+        User user = userRepository.findById(userId).orElseThrow(()->new UserDoesNotExistException("User not found"));
         authority.setId(idGeneratorService.getCurrentId());
         user.getAuthorities().add(authority);
         userRepository.save(user);
@@ -44,7 +42,7 @@ public class AuthorityService {
         return authorities;
     }
 
-    public void deleteAuthority(Integer id) {
+    public void deleteAuthority(Integer id) throws AuthorityDoesNotExistException {
         authorityRepository.deleteById(id);
     }
 }
