@@ -22,7 +22,7 @@ import java.util.Set;
 @Getter
 @Valid
 @Builder
-public class Users {
+public class User {
 
 
     @NotNull(message="id must not be null")

@@ -1,18 +1,18 @@
 package com.internship.backend.repository;
 
-import com.internship.backend.model.Users;
-import jakarta.transaction.Transactional;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import com.couchbase.client.java.query.QueryScanConsistency;
+import com.internship.backend.model.User;
+
+import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.stereotype.Repository;
 
-public interface UserRepository extends JpaRepository<Users, Integer> {
-    Users findByUsername(String username);
-    Users findByEmail(String mail);
+import java.util.List;
+import java.util.Optional;
 
-    @Modifying
-    @Transactional
-    @Query(value = "ALTER TABLE Users ALTER COLUMN id RESTART WITH 1", nativeQuery = true)
-    void resetAutoIncrementId();
+@Repository
+public interface UserRepository extends CouchbaseRepository<User, Integer> {
+
+    Optional<User> findByUsername(String username);
+
+    Optional<User> findByEmail(String mail);
 }

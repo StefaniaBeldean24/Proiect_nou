@@ -30,6 +30,7 @@ public class SecurityConfig {
         requestHandler.setCsrfRequestAttributeName("_csrf");
 
         http
+                //creates a JSESSIONID
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
                 .cors(corsCustomizer -> corsCustomizer.configurationSource(corsConfigurationSource()))
                 .csrf((csrf) -> csrf.csrfTokenRequestHandler(requestHandler)
@@ -37,6 +38,7 @@ public class SecurityConfig {
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
 
                 )
+                //executes CsrfCookieFilter after the BasicuthenticationFilter (as soon as the login operation is completed the CsrfToken will be generated)
                 .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
                 .addFilterBefore(new RequestValidationBeforeFilter(), BasicAuthenticationFilter.class)
                 .authorizeHttpRequests(authorize -> authorize
@@ -60,6 +62,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+        //we are telling what are the origins or servers that are allowed to communicate with backend server
         configuration.setAllowedOrigins(Collections.singletonList("http://localhost:8080"));
         configuration.setAllowedMethods(Collections.singletonList("*"));
         configuration.setAllowCredentials(true);
