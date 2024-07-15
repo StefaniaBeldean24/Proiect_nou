@@ -30,7 +30,7 @@ public class TennisCourtController {
     @PostMapping("/add")
     public ResponseEntity<TennisCourt> addTennisCourt(@RequestBody TennisCourtDTO tennisCourtDTO){
         try{
-            TennisCourt tennisCourt = tennisCourtService.fromDTO(tennisCourtDTO);
+            TennisCourt tennisCourt = tennisCourtService.parse(tennisCourtDTO);
             tennisCourtService.addTennisCourt(tennisCourt);
             Log.info("Added tennis court "+ tennisCourt.getName());
             return ok(tennisCourt);
@@ -57,7 +57,7 @@ public class TennisCourtController {
     @PutMapping("/update/{id}")
     public ResponseEntity<TennisCourt> updateTennisCourt(@PathVariable("id") int tennisCourtId, @RequestBody TennisCourtDTO tennisCourtDTO){
         try{
-            TennisCourt tennisCourt = tennisCourtService.fromDTO(tennisCourtDTO);
+            TennisCourt tennisCourt = tennisCourtService.parse(tennisCourtDTO);
             Optional<TennisCourt> updatedTennisCourt = Optional.ofNullable(tennisCourtService.updateTennisCourt(tennisCourtId, tennisCourt));
             Log.info("Updating tennisCourt: ", tennisCourt);
             return ok(updatedTennisCourt.get());

@@ -29,7 +29,7 @@ public class PriceService {
         return priceRepository.save(price);
     }
 
-    public Price fromDTO(PriceDTO priceDTO){
+    public Price parse(PriceDTO priceDTO){
         Price price = new Price();
         price.setId(priceDTO.getId());
         price.setSeason(priceDTO.getSeason());

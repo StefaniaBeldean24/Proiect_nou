@@ -29,7 +29,7 @@ public class PriceController {
 
     @PostMapping("/add")
     public Price addPrice(@RequestBody PriceDTO priceDTO){
-        Price price = priceService.fromDTO(priceDTO);
+        Price price = priceService.parse(priceDTO);
         priceService.addPrice(price);
         return new ResponseEntity<>(price, HttpStatus.CREATED).getBody();
     }
@@ -48,7 +48,7 @@ public class PriceController {
     @PutMapping("/update/{id}")
     public ResponseEntity<Price> updatePrice(@PathVariable("id") int priceId, @RequestBody PriceDTO priceDTO){
         try{
-            Price price = priceService.fromDTO(priceDTO);
+            Price price = priceService.parse(priceDTO);
             Optional<Price> updatedPrice = Optional.ofNullable(priceService.update(priceId, price));
             Log.info("Get all"+ price.toString());
             return ok(updatedPrice.get());

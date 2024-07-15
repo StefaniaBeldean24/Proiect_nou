@@ -31,7 +31,7 @@ public class LocationController {
     @PostMapping("/add")
     public ResponseEntity<Location> addLocation(@RequestBody LocationDTO locationDTO){
         try{
-            Location baseLocation = locationService.fromDTO(locationDTO);
+            Location baseLocation = locationService.parse(locationDTO);
             baseLocation = locationService.addLocation(baseLocation);
             Log.info("Added location " + baseLocation.getName());
             return ok(baseLocation);
@@ -44,8 +44,9 @@ public class LocationController {
 
     @GetMapping("/getAll")
     public ResponseEntity<List<Location>> getAllLocations() {
-        Optional<List<Location>> location = Optional.ofNullable(locationService.getAllLocations());
-        if(location.isPresent()) {
+        //Optional<List<Location>> location = Optional.ofNullable(locationService.getAllLocations());
+        List<Location> location = locationService.getAllLocations();
+        if(!location.isEmpty()) {
             Log.info("Get all: ", location);
             return ok(locationService.getAllLocations());
         }
@@ -58,7 +59,7 @@ public class LocationController {
     @PutMapping("/update/{id}")
     public ResponseEntity<Location> updateLocation(@PathVariable("id") int locationId, @RequestBody LocationDTO locationDTO){
         try{
-            Location location = locationService.fromDTO(locationDTO);
+            Location location = locationService.parse(locationDTO);
             Optional<Location> updatedLocation = Optional.ofNullable(locationService.update(locationId, location));
             Log.info("Updating location: " ,location);
             return ok(updatedLocation.get());

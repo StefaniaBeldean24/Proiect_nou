@@ -7,7 +7,7 @@ import com.internship.backend.model.Location;
 import com.internship.backend.model.TennisCourt;
 import com.internship.backend.repository.LocationRepository;
 import com.internship.backend.repository.TennisCourtRepository;
-import jakarta.persistence.EntityNotFoundException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -22,19 +22,27 @@ public class LocationService {
     @Autowired
     private TennisCourtRepository tennisCourtRepository;
 
+    @Autowired
+    private IdGeneratorService idGeneratorService;
+
+    //Logger log = (Logger) LoggerFactory.getLogger(LocationService.class);
+
     public List<Location> getAllLocations(){
         return locationRepository.findAll();
     }
 
     public Location addLocation(Location location) throws LocationAlreadyExistsException {
 
+        location.setId(idGeneratorService.getCurrentId());
+
         if(locationRepository.findByName(location.getName()) != null){
             throw new LocationAlreadyExistsException("Location already exists");
         }
-        return locationRepository.save(location);
+        Location savedLocation = locationRepository.save(location);
+        return savedLocation;
     }
 
-    public Location fromDTO(LocationDTO locationDTO){
+    public Location parse(LocationDTO locationDTO){
         Location location = new Location();
         location.setId(locationDTO.getId());
         location.setName(locationDTO.getName());
@@ -51,22 +59,18 @@ public class LocationService {
     }
 
     public Location update(int locationId, Location updatedLocation) throws LocationDoesNotExistException {
-         Location location = locationRepository.findById(locationId).orElseThrow(()->new LocationDoesNotExistException("Location not found"));
+        Location location = locationRepository.findById(locationId).orElseThrow(()->new LocationDoesNotExistException("Location not found"));
 
-         location.setName(updatedLocation.getName());
-         location.setDetails(updatedLocation.getDetails());
+        location.setName(updatedLocation.getName());
+        location.setDetails(updatedLocation.getDetails());
 
-         return locationRepository.save(location);
+        return locationRepository.save(location);
     }
 
     public void delete(int locationID) throws LocationDoesNotExistException {
-        if(!locationRepository.existsById(locationID))
-            throw new LocationDoesNotExistException("Location does not exist");
-
-        if (locationRepository.count() == 0) {
-            locationRepository.resetAutoIncrementId();
+        if(!locationRepository.existsById(locationID)){
+            throw new LocationDoesNotExistException("Location id does not exist");
         }
-
         locationRepository.deleteById(locationID);
     }
 }
