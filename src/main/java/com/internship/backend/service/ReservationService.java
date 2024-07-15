@@ -1,23 +1,17 @@
 package com.internship.backend.service;
 
-import com.internship.backend.dto.ReservationDTO;
-import com.internship.backend.exceptions.InvalidDateException;
-import com.internship.backend.exceptions.ReservationAlreadyExists;
-import com.internship.backend.exceptions.ReservationDoesNotExistException;
-import com.internship.backend.exceptions.TennisCourtDoesNotExistsException;
+import com.internship.backend.exceptions.*;
 import com.internship.backend.model.NewDate;
 import com.internship.backend.model.Reservation;
+
 import com.internship.backend.model.TennisCourt;
-import com.internship.backend.model.Users;
-import com.internship.backend.repository.PriceRepository;
 import com.internship.backend.repository.ReservationRepository;
+
 import com.internship.backend.repository.TennisCourtRepository;
-import com.internship.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class ReservationService {
@@ -26,20 +20,26 @@ public class ReservationService {
     private ReservationRepository reservationRepository;
 
     @Autowired
-    private UserRepository userRepository;
+    private IdGeneratorService idGeneratorService;
 
     @Autowired
     private TennisCourtRepository tennisCourtRepository;
 
-    @Autowired
-    private PriceRepository priceRepository;
-
-    public List<Reservation> getAllReservations(){
-        return reservationRepository.findAll();
-    }
 
     public Reservation addReservation(Reservation reservation) throws ReservationAlreadyExists, InvalidDateException {
 
+        reservationValidation(reservation);
+        if (isValidReservation((reservation)))
+        {
+            reservation.setId(idGeneratorService.getCurrentId());
+            return reservationRepository.save(reservation);
+        }
+        else{
+            throw new ReservationAlreadyExists("Reservation intersects another one");
+        }
+    }
+
+    private void reservationValidation(Reservation reservation) throws InvalidDateException {
         if (reservation.getStartTime().getMonth() != reservation.getEndTime().getMonth()) {
             throw new InvalidDateException("The start date and end date must be within the same month");
         }
@@ -55,70 +55,9 @@ public class ReservationService {
         if(reservation.getEndTime().getHour() - reservation.getStartTime().getHour() != 2){
             throw new InvalidDateException("The reservation duration must be exactly 2 hours");
         }
-
-        if (isValidReservation((reservation)))
-        {
-            return reservationRepository.save(reservation);
-        }
-        else{
-            throw new ReservationAlreadyExists("Reservation intersects another one");
-        }
     }
 
-    public boolean isValidReservation(Reservation reservation){
-        List<Reservation> reservationList = reservationRepository.findAll();
-        for(Reservation elem : reservationList){
-            if(elem.getTennisCourt().getId() == reservation.getTennisCourt().getId()) {
-                if (!(reservation.getEndTime().isBefore(elem.getStartTime()) || reservation.getStartTime().isAfter(elem.getEndTime()))) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-
-    public Reservation fromDTO(ReservationDTO reservationDTO) {
-        Reservation reservation = new Reservation();
-        int userId = reservationDTO.getUserId();
-        Optional<Users> user = userRepository.findById(userId);
-        reservation.setUser(user.get());
-
-        reservation.setStartTime(reservationDTO.getStartTime());
-        reservation.setEndTime(reservationDTO.getEndTime());
-
-        int tennisCourtId = reservationDTO.getTennisCourtId();
-        Optional<TennisCourt> tennisCourt = tennisCourtRepository.findById(tennisCourtId);
-        reservation.setTennisCourt(tennisCourt.get());
-
-        return reservation;
-
-    }
-
-    public Reservation update(int reservationId, Reservation newReservation) throws ReservationAlreadyExists {
-        Reservation reservation = reservationRepository.findById(reservationId).orElseThrow(()->new ReservationAlreadyExists("Reservation not found"));
-
-        reservation.setStartTime(newReservation.getStartTime());
-        reservation.setEndTime(newReservation.getEndTime());
-        if(reservationRepository.count()==0){
-            reservationRepository.resetAutoIncrementId();
-        }
-
-        return reservationRepository.save(reservation);
-    }
-
-    public void delete(int reservationId) throws ReservationDoesNotExistException {
-        if(!reservationRepository.existsById(reservationId))
-            throw new ReservationDoesNotExistException("Reservation not found");
-        priceRepository.deleteById(reservationId);
-    }
-
-    //metoda in care user-ul sa vada toate terenurile disponibile dintr-o anumita data
-   public List<TennisCourt> getAvailableTennisCourts(NewDate startDate, NewDate endDate) throws TennisCourtDoesNotExistsException, InvalidDateException {
-        int tennisCourtId;
-        List<TennisCourt> tennisCourts = tennisCourtRepository.findAll();
-        List<Reservation> reservations = reservationRepository.findAll();
-
+    private void dateValidation(NewDate startDate, NewDate endDate) throws InvalidDateException {
         if (startDate.getMonth() != endDate.getMonth()) {
             throw new InvalidDateException("The start date and end date must be within the same month");
         }
@@ -134,13 +73,63 @@ public class ReservationService {
         if(endDate.getHour() - startDate.getHour() != 2){
             throw new InvalidDateException("The reservation duration must be exactly 2 hours");
         }
+    }
 
+    private boolean isValidReservation(Reservation reservation){
+        List<Reservation> reservationList = reservationRepository.findAll();
+        for(Reservation elem : reservationList){
+            if(elem.getTennisCourtId() == reservation.getTennisCourtId()) {
+                if (!(reservation.getEndTime().isBefore(elem.getStartTime()) || reservation.getStartTime().isAfter(elem.getEndTime()))) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public List<Reservation> getAllReservations() {
+        return reservationRepository.findAll();
+    }
+
+
+    public Optional<Reservation> getReservationById(Integer id) {
+        return reservationRepository.findById(id);
+    }
+
+public Reservation updateReservation(Integer id, Reservation reservationDetails) throws ReservationDoesNotExistException {
+    return reservationRepository.findById(id)
+            .map(reservation -> tryUpdateReservation(reservation, reservationDetails))
+            .orElseThrow(() -> new ReservationDoesNotExistException("Reservation not found with id " + id));
+}
+
+    private Reservation tryUpdateReservation(Reservation reservation, Reservation reservationDetails) {
+        reservation.setUserId(reservationDetails.getUserId());
+        reservation.setTennisCourtId(reservationDetails.getTennisCourtId());
+        reservation.setStartTime(reservationDetails.getStartTime());
+        reservation.setEndTime(reservationDetails.getEndTime());
+        return reservationRepository.save(reservation);
+    }
+
+    public void deleteReservation(Integer id) throws ReservationDoesNotExistException {
+        if(!reservationRepository.existsById(1)){
+            throw new ReservationDoesNotExistException("Reservation not found with id " + id);
+        }
+        reservationRepository.deleteById(id);
+    }
+
+    //metoda in care user-ul sa vada toate terenurile disponibile dintr-o anumita data
+    public List<TennisCourt> getAvailableTennisCourts(NewDate startDate, NewDate endDate) throws TennisCourtDoesNotExistsException, InvalidDateException {
+        int tennisCourtId;
+        List<TennisCourt> tennisCourts = tennisCourtRepository.findAll();
+        List<Reservation> reservations = reservationRepository.findAll();
+
+        dateValidation(startDate, endDate);
         for (Reservation elem : reservations){
             if(( elem.getStartTime().equals(startDate) &&  elem.getEndTime().equals(endDate))
                     || (elem.getStartTime().isBefore(endDate) && endDate.isBefore(elem.getEndTime()))
                     || (elem.getStartTime().isBefore(startDate) && startDate.isBefore(elem.getEndTime())))
             {
-                tennisCourtId = elem.getTennisCourt().getId();
+                tennisCourtId = elem.getTennisCourtId();
 
                 for (int i = 0; i < tennisCourts.size(); i++) {
                     if (tennisCourts.get(i).getId() == tennisCourtId) {
@@ -158,4 +147,3 @@ public class ReservationService {
     }
 
 }
-

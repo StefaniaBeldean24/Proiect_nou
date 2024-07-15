@@ -2,15 +2,17 @@ package com.internship.backend.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import jakarta.persistence.*;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.couchbase.core.mapping.Document;
 
 import java.util.List;
 
-@Entity
+@Document
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter
@@ -18,14 +20,11 @@ import java.util.List;
 public class Location {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
 
     private String name;
     private String details;
 
-    @OneToMany(mappedBy = "location", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
     private List<TennisCourt> tennisCourt;
 
     @Override

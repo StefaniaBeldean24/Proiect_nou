@@ -1,45 +1,29 @@
 package com.internship.backend.model;
 
-import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.data.couchbase.core.mapping.Field;
 
 
-@Entity
+@Document
 @Setter
 @Getter
 public class Reservation {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
 
+    @Field
+    private Integer userId;
 
-    @ManyToOne
-    @JoinColumn(name = "users_id")
-    private Users user;
-    
-    @ManyToOne
-    @JoinColumn(name = "tennis_court_id")
-    private TennisCourt tennisCourt;
+    @Field
+    private Integer tennisCourtId;
 
-    @Embedded
-    @AttributeOverrides({
-            @AttributeOverride(name = "minute", column = @Column(name = "start_minute")),
-            @AttributeOverride(name = "hour", column = @Column(name = "start_hour")),
-            @AttributeOverride(name = "day", column = @Column(name = "start_day")),
-            @AttributeOverride(name = "month", column = @Column(name = "start_month")),
-            @AttributeOverride(name = "year", column = @Column(name = "start_year"))
-    })
+    @Field
     private NewDate startTime;
 
-    @Embedded
-    @AttributeOverrides({
-            @AttributeOverride(name = "minute", column = @Column(name = "end_minute")),
-            @AttributeOverride(name = "hour", column = @Column(name = "end_hour")),
-            @AttributeOverride(name = "day", column = @Column(name = "end_day")),
-            @AttributeOverride(name = "month", column = @Column(name = "end_month")),
-            @AttributeOverride(name = "year", column = @Column(name = "end_year"))
-    })
+    @Field
     private NewDate endTime;
 }

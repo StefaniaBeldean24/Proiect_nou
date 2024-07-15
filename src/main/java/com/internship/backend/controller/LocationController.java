@@ -5,7 +5,6 @@ import com.internship.backend.exceptions.LocationAlreadyExistsException;
 import com.internship.backend.exceptions.LocationDoesNotExistException;
 import com.internship.backend.model.Location;
 import com.internship.backend.service.LocationService;
-import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
