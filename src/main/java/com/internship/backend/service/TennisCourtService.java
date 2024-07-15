@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class TennisCourtService {
@@ -20,27 +21,45 @@ public class TennisCourtService {
     @Autowired
     private LocationRepository locationRepository;
 
+    @Autowired
+    private IdGeneratorService idGeneratorService;
+
+
     public List<TennisCourt> getAllTennisCourts(){
         return tennisCourtRepository.findAll();
     }
 
+
+
     public TennisCourt addTennisCourt(TennisCourt tennisCourt) throws TennisCourtAlreadyExistsException {
-        for (Location location : locationRepository.findAll()){
-            if (location.getId() == tennisCourt.getLocation().getId()){
-                if (!location.getTennisCourt().contains(tennisCourt)) {
-                    List<TennisCourt> tennisCourtList = location.getTennisCourt();
-                    tennisCourtList.add(tennisCourt);
-                    location.setTennisCourt(tennisCourtList);
-                }
-                else{
-                    throw new TennisCourtAlreadyExistsException("TennisCourt already exists");
-                }
+        tennisCourt.setId(idGeneratorService.getCurrentId());
+
+        Optional<Location> locationOptional = findLocation(tennisCourt.getLocation().getId());
+
+        if (locationOptional.isPresent()) {
+            Location location = locationOptional.get();
+
+            if (!location.getTennisCourt().contains(tennisCourt)) {
+                List<TennisCourt> tennisCourtList = location.getTennisCourt();
+                tennisCourtList.add(tennisCourt);
+                location.setTennisCourt(tennisCourtList);
+            } else {
+                throw new TennisCourtAlreadyExistsException("TennisCourt already exists");
             }
         }
+
         return tennisCourtRepository.save(tennisCourt);
     }
 
-    public TennisCourt fromDTO(TennisCourtDTO tennisCourtDTO) {
+    private Optional<Location> findLocation(int locationId) {
+        return locationRepository.findAll()
+                .stream()
+                .filter(l -> l.getId() == locationId)
+                .findFirst();
+    }
+
+
+    public TennisCourt parse(TennisCourtDTO tennisCourtDTO) {
         TennisCourt tennisCourt = new TennisCourt();
         tennisCourt.setId(tennisCourtDTO.getId());
         tennisCourt.setName(tennisCourtDTO.getName());
@@ -67,12 +86,7 @@ public class TennisCourtService {
         if(!locationRepository.existsById(tennisCourtId))
             throw new TennisCourtDoesNotExistsException("TennisCourt does not exist");
 
-        if (tennisCourtRepository.count() == 0) {
-            tennisCourtRepository.resetAutoIncrementId();
-        }
-
         locationRepository.deleteById(tennisCourtId);
     }
 
 }
-

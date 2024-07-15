@@ -1,12 +1,15 @@
 package com.internship.backend.model;
 
-import jakarta.persistence.Embeddable;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.couchbase.core.mapping.Document;
 
-@Embeddable
+//nu pot fi programari din ani diferiti
+
+@Document
 @Setter
 @Getter
 @NoArgsConstructor
@@ -28,24 +31,7 @@ public class NewDate {
     }
 
     public boolean isAfter(Object o){
-        if (this == o) return false;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        NewDate date = (NewDate) o;
-        if (year > date.year) return true;
-        if (year == date.year) {
-            if (month > date.month) return true;
-            if (month == date.month) {
-                if (day > date.day) return true;
-                if (day == date.day) {
-                    if (hour > date.hour) return true;
-                    if (hour == date.hour) {
-                        return minute > date.minute;
-                    }
-                }
-            }
-        }
-        return false;
+        return !isBefore(o) && !equals(o);
     }
 
     public boolean isBefore(Object o){
@@ -70,5 +56,4 @@ public class NewDate {
     }
 
 }
-
 
