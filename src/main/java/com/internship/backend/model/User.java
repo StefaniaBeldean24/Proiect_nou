@@ -25,7 +25,7 @@ procedureName = "getAllUsersProcedure")
 @Getter
 @Valid
 @Builder
-public class Users {
+public class User {
 
 
     @NotNull(message="id must not be null")

@@ -12,11 +12,11 @@ import java.util.Base64;
 
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
-
-public class RequestValidationBeforeFilter  implements Filter {
+//custom filter
+public class RequestValidationBeforeFilter implements Filter {
 
     public static final String AUTHENTICATION_SCHEME_BASIC = "Basic";
-    private Charset credentialsCharset = StandardCharsets.UTF_8;
+    private Charset credentialsCharset = StandardCharsets.UTF_8; //specifies character encoding used for decoding credentials
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -36,6 +36,8 @@ public class RequestValidationBeforeFilter  implements Filter {
                     if (delim == -1) {
                         throw new BadCredentialsException("Invalid basic authentication token");
                     }
+                    //we extract th email and we try to validate if the value contains any value 'simon'
+                    //If yes, we are going to return bad request status (400 error)
                     String email = token.substring(0, delim);
                     if (email.toLowerCase().contains("simon")) {
                         res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
