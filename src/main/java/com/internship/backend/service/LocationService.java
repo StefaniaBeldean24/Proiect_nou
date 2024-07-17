@@ -27,8 +27,6 @@ public class LocationService {
     @Autowired
     private IdGeneratorService idGeneratorService;
 
-    //Logger log = (Logger) LoggerFactory.getLogger(LocationService.class);
-
     public List<Location> getAllLocations(){
         return locationRepository.findAll();
     }

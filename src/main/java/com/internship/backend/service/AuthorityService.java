@@ -43,6 +43,9 @@ public class AuthorityService {
     }
 
     public void deleteAuthority(Integer id) throws AuthorityDoesNotExistException {
+        if(!authorityRepository.existsById(id)){
+            throw new AuthorityDoesNotExistException("Authority with the id " + id + "does not exist");
+        }
         authorityRepository.deleteById(id);
     }
 }

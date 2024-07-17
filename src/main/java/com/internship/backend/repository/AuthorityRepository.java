@@ -12,5 +12,8 @@ public interface AuthorityRepository extends CouchbaseRepository<Authority, Inte
 
     Optional<Authority> findByName(String name);
 
+<<<<<<< Updated upstream
 //    Optional<Users> findByUsername(String username);
+=======
+>>>>>>> Stashed changes
 }

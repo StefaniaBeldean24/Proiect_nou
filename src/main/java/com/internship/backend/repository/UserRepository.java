@@ -1,12 +1,15 @@
 package com.internship.backend.repository;
 
+<<<<<<< Updated upstream
 import com.couchbase.client.java.query.QueryScanConsistency;
 import com.internship.backend.model.Users;
+=======
+import com.internship.backend.model.User;
+>>>>>>> Stashed changes
 
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
 
 @Repository
