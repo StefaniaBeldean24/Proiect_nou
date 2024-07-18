@@ -1,6 +1,5 @@
 package com.internship.backend.controller;
 
-import com.internship.backend.exceptions.UserDoesNotExistException;
 import com.internship.backend.model.Authority;
 import com.internship.backend.service.AuthorityService;
 
@@ -19,8 +18,8 @@ public class AuthorityController {
     private AuthorityService authorityService;
 
     @PostMapping("/addAuthority/{userId}")
-    public Authority createAuthority(@PathVariable Integer userId, @RequestBody Authority authority) throws UserDoesNotExistException {
-        return authorityService.createAuthority(userId, authority);
+    public Authority createAuthority(@RequestBody Authority authority) {
+        return authorityService.add(authority);
     }
 
     @GetMapping("/getAllAuthorities")
@@ -31,7 +30,7 @@ public class AuthorityController {
     @DeleteMapping("/delete/{id}")
     public void deleteAuthority(@PathVariable Integer id) {
         try{
-            authorityService.deleteAuthority(id);
+            authorityService.delete(id);
         }catch(Exception e){
         }
 

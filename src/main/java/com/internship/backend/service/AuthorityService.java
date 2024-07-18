@@ -1,12 +1,15 @@
 package com.internship.backend.service;
 
+import com.internship.backend.dto.AuthorityDTO;
 import com.internship.backend.model.Authority;
+import com.internship.backend.model.User;
 import com.internship.backend.repository.AuthorityRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class AuthorityService {
@@ -17,6 +20,14 @@ public class AuthorityService {
 
     public Authority add(Authority authority){
         authorityRepository.save(authority);
+        return authority;
+    }
+
+    public Authority parse(AuthorityDTO authorityDTO){
+        Authority authority = new Authority();
+        authority.getUser().setId(authorityDTO.getUserId());
+        authority.setName(authority.getName());
+
         return authority;
     }
 

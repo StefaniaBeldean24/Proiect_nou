@@ -9,9 +9,7 @@ import lombok.Setter;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class TennisCourtDTO {
-    //private int id;
-    private String name;
-    private String details;
-    private int locationId;
+public class AuthorityDTO {
+    private String role;
+    private Integer userId;
 }

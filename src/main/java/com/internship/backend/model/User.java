@@ -51,18 +51,20 @@ public class User {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Users users = (Users) o;
+        User users = (User) o;
         return id == users.id && username.equals(users.username) && password.equals(users.password) && email.equals(users.email);
     }
 
-    //@JsonIgnore
+    @JsonIgnore
     @JsonManagedReference
     @OneToMany(mappedBy="user", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
     private Set<Authority> authorities;
 
     @JsonIgnore
+    @JsonManagedReference
     @OneToMany(mappedBy="user", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
     private List<Reservation> reservations;
+
 
     @Override
     public int hashCode() {

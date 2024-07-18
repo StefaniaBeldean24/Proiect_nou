@@ -2,22 +2,18 @@ package com.internship.backend.controller;
 
 import com.internship.backend.dto.UserDTO;
 import com.internship.backend.exceptions.EmailAlreadyExistsException;
+import com.internship.backend.exceptions.IdUserNotFoundException;
 import com.internship.backend.exceptions.UserAlreadyExistsException;
 import com.internship.backend.exceptions.UserDoesNotExistException;
 import com.internship.backend.model.User;
 import com.internship.backend.service.UserService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 import static org.springframework.http.ResponseEntity.notFound;
@@ -55,8 +51,14 @@ public class UserController {
     }
 
     @PutMapping("/update/{id}")
-    public User updateUser(@PathVariable Integer id, @RequestBody User user) {
-        return userService.updateUser(id, user);
+    public ResponseEntity<Object> updateUser(@PathVariable Integer id, @RequestBody UserDTO userDTO) {
+        try{
+            User user = userService.parse(userDTO);
+            return ok(userService.updateUser(id, user));
+        }catch(IdUserNotFoundException e){
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+
     }
 
     @DeleteMapping("/delete/{id}")

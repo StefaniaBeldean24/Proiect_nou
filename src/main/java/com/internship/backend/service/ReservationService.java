@@ -8,7 +8,7 @@ import com.internship.backend.exceptions.TennisCourtDoesNotExistsException;
 import com.internship.backend.model.NewDate;
 import com.internship.backend.model.Reservation;
 import com.internship.backend.model.TennisCourt;
-import com.internship.backend.model.Users;
+import com.internship.backend.model.User;
 import com.internship.backend.repository.PriceRepository;
 import com.internship.backend.repository.ReservationRepository;
 import com.internship.backend.repository.TennisCourtRepository;
@@ -40,6 +40,24 @@ public class ReservationService {
 
     public Reservation addReservation(Reservation reservation) throws ReservationAlreadyExists, InvalidDateException {
 
+
+        addReservationValidation(reservation);
+
+        if (isValidReservation((reservation)))
+        {
+            return reservationRepository.save(reservation);
+        }
+        else{
+            throw new ReservationAlreadyExists("Reservation intersects another one");
+        }
+    }
+
+    public void addReservationValidation(Reservation reservation) throws InvalidDateException {
+
+        if(!reservation.getStartTime().isWithinNext24Hours()){
+            throw new InvalidDateException("Reservations can only be made for the current date or within the next 24 hours");
+        }
+
         if (reservation.getStartTime().getMonth() != reservation.getEndTime().getMonth()) {
             throw new InvalidDateException("The start date and end date must be within the same month");
         }
@@ -55,17 +73,9 @@ public class ReservationService {
         if(reservation.getEndTime().getHour() - reservation.getStartTime().getHour() != 2){
             throw new InvalidDateException("The reservation duration must be exactly 2 hours");
         }
-
-        if (isValidReservation((reservation)))
-        {
-            return reservationRepository.save(reservation);
-        }
-        else{
-            throw new ReservationAlreadyExists("Reservation intersects another one");
-        }
     }
 
-    public boolean isValidReservation(Reservation reservation){
+    private boolean isValidReservation(Reservation reservation){
         List<Reservation> reservationList = reservationRepository.findAll();
         for(Reservation elem : reservationList){
             if(elem.getTennisCourt().getId() == reservation.getTennisCourt().getId()) {
@@ -78,10 +88,10 @@ public class ReservationService {
     }
 
 
-    public Reservation fromDTO(ReservationDTO reservationDTO) {
+    public Reservation parse(ReservationDTO reservationDTO) {
         Reservation reservation = new Reservation();
         int userId = reservationDTO.getUserId();
-        Optional<Users> user = userRepository.findById(userId);
+        Optional<User> user = userRepository.findById(userId);
         reservation.setUser(user.get());
 
         reservation.setStartTime(reservationDTO.getStartTime());
@@ -100,6 +110,7 @@ public class ReservationService {
 
         reservation.setStartTime(newReservation.getStartTime());
         reservation.setEndTime(newReservation.getEndTime());
+
         if(reservationRepository.count()==0){
             reservationRepository.resetAutoIncrementId();
         }
@@ -110,15 +121,16 @@ public class ReservationService {
     public void delete(int reservationId) throws ReservationDoesNotExistException {
         if(!reservationRepository.existsById(reservationId))
             throw new ReservationDoesNotExistException("Reservation not found");
+
+        reservationRepository.deleteById(reservationId);
         priceRepository.deleteById(reservationId);
+
+        if(reservationRepository.count() == 0){
+            reservationRepository.resetAutoIncrementId();
+        }
     }
 
-    //metoda in care user-ul sa vada toate terenurile disponibile dintr-o anumita data
-   public List<TennisCourt> getAvailableTennisCourts(NewDate startDate, NewDate endDate) throws TennisCourtDoesNotExistsException, InvalidDateException {
-        int tennisCourtId;
-        List<TennisCourt> tennisCourts = tennisCourtRepository.findAll();
-        List<Reservation> reservations = reservationRepository.findAll();
-
+    public void getAvailableTennisCourtsValidation(NewDate startDate, NewDate endDate) throws InvalidDateException {
         if (startDate.getMonth() != endDate.getMonth()) {
             throw new InvalidDateException("The start date and end date must be within the same month");
         }
@@ -134,6 +146,15 @@ public class ReservationService {
         if(endDate.getHour() - startDate.getHour() != 2){
             throw new InvalidDateException("The reservation duration must be exactly 2 hours");
         }
+    }
+
+    //metoda in care user-ul sa vada toate terenurile disponibile dintr-o anumita data
+   public List<TennisCourt> getAvailableTennisCourts(NewDate startDate, NewDate endDate) throws TennisCourtDoesNotExistsException, InvalidDateException {
+        int tennisCourtId;
+        List<TennisCourt> tennisCourts = tennisCourtRepository.findAll();
+        List<Reservation> reservations = reservationRepository.findAll();
+
+        getAvailableTennisCourtsValidation(startDate, endDate);
 
         for (Reservation elem : reservations){
             if(( elem.getStartTime().equals(startDate) &&  elem.getEndTime().equals(endDate))

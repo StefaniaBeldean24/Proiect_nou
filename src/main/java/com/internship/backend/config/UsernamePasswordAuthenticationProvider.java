@@ -30,7 +30,7 @@ public class UsernamePasswordAuthenticationProvider implements AuthenticationPro
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String username = authentication.getName();
         String password = authentication.getCredentials().toString();
-        Optional<User> optionalUser = userRepository.findByUsername(username);
+        Optional<User> optionalUser = Optional.ofNullable(userRepository.findByUsername(username));
         if(optionalUser.isPresent()){
             User user = optionalUser.get();
             if (passwordEncoder.matches(password, user.getPassword())){

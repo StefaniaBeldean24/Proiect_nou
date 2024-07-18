@@ -1,6 +1,6 @@
 package com.internship.backend.repository;
 
-import com.internship.backend.model.Users;
+import com.internship.backend.model.User;
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -11,12 +11,13 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-public interface UserRepository extends JpaRepository<Users, Integer> {
-    Users findByUsername(String username);
-    Users findByEmail(String mail);
+public interface UserRepository extends JpaRepository<User, Integer> {
+    User findByUsername(String username);
+    User findByEmail(String mail);
+
 
     @Query(value = "CALL getAllUsersProcedure()", nativeQuery = true)
-    List<Users> getAllUsersProcedure();
+    List<User> getAllUsersProcedure();
 
     @Modifying
     @Query(value = "CALL deleteUserByIdProcedure(:userId);", nativeQuery = true)

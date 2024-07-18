@@ -2,6 +2,7 @@ package com.internship.backend.service;
 
 import com.internship.backend.dto.UserDTO;
 import com.internship.backend.exceptions.EmailAlreadyExistsException;
+import com.internship.backend.exceptions.IdUserNotFoundException;
 import com.internship.backend.exceptions.UserAlreadyExistsException;
 import com.internship.backend.exceptions.UserDoesNotExistException;
 import com.internship.backend.model.Authority;
@@ -28,9 +29,6 @@ public class UserService {
     private UserRepository userRepository;
 
     @Autowired
-    private IdGeneratorService idGeneratorService;
-
-    @Autowired
     private AuthorityRepository authorityRepository;
 
     @Autowired
@@ -43,8 +41,7 @@ public class UserService {
     @Transactional
     public User register(User user) throws EmailAlreadyExistsException, UserAlreadyExistsException {
 
-        validateRegisterData(user);
-        user.setId(idGeneratorService.getCurrentId());
+        registerValidation(user);
         String hashPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(hashPassword);
 
@@ -57,40 +54,39 @@ public class UserService {
         return savedUser;
     }
 
-    private void validateRegisterData(User user) throws UserAlreadyExistsException, EmailAlreadyExistsException{
-        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+    private void registerValidation(User user) throws UserAlreadyExistsException, EmailAlreadyExistsException{
+
+        Optional<User> findByUsername = Optional.ofNullable(userRepository.findByUsername(user.getUsername()));
+        Optional<User> findByEmail = Optional.ofNullable(userRepository.findByEmail(user.getEmail()));
+
+        if (findByUsername.isPresent()) {
             throw new UserAlreadyExistsException("Username already exists");
         }
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+        if (findByEmail.isPresent()) {
             throw new EmailAlreadyExistsException("Email already exists");
         }
     }
 
     public User parse(UserDTO userDTO) {
-        User user = new User();
-        user.setUsername(userDTO.getUsername());
-        user.setPassword(userDTO.getPassword());
-        user.setEmail(userDTO.getEmail());
+        User user = User.builder()
+                .username(userDTO.getUsername())
+                .password(userDTO.getPassword())
+                .email(userDTO.getEmail())
+                .build();
 
-        Authority authority = resolveAuthority(userDTO.getRole());
-        user.setAuthorities(Collections.singleton(authority));
+        Set<Authority> authorities = new HashSet<>();
+        Authority authority = new Authority();
+        authority.setName(userDTO.getRole());
+        authority.setUser(user);
+
+        authorities.add(authority);
+        user.setAuthorities(authorities);
 
         return user;
     }
 
-    private Authority resolveAuthority(String roleName) {
-        Optional<Authority> optionalAuthority = authorityRepository.findByName(roleName);
-        if (optionalAuthority.isPresent()) {
-            return optionalAuthority.get();
-        } else {
-            Authority newAuthority = new Authority(roleName);
-            newAuthority.setId(idGeneratorService.getCurrentId());
-            return authorityRepository.save(newAuthority);
-        }
-    }
 
-
-    public List<User> getAllUsers() {
+    public List<User> getAllUsersWithReservation() {
         List<User> users = userRepository.findAll();
 
         users.forEach(user -> {
@@ -102,12 +98,17 @@ public class UserService {
     }
 
 
+    public List<User> getAllUsers() {
+       return userRepository.findAll();
+    }
+
+
     public Optional<User> getUserById(Integer id) {
         return userRepository.findById(id);
     }
 
 
-    public User updateUser(Integer id, User userDetails) {
+    public User updateUser(Integer id, User userDetails) throws IdUserNotFoundException {
         Optional<User> optionalUser = userRepository.findById(id);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
@@ -117,7 +118,7 @@ public class UserService {
             user.setAuthorities(userDetails.getAuthorities());
             return userRepository.save(user);
         } else {
-            throw new RuntimeException("User not found with id " + id);
+            throw new IdUserNotFoundException("User not found with id " + id);
         }
     }
 
@@ -126,6 +127,10 @@ public class UserService {
             throw new UserDoesNotExistException("User does not exisit");
         }
         userRepository.deleteById(id);
+
+        if(userRepository.count() == 0){
+            userRepository.resetAutoIncrementId();
+        }
     }
 }
 

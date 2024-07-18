@@ -11,6 +11,8 @@ import java.util.List;
 
 public interface ReservationRepository extends JpaRepository<Reservation, Integer> {
 
+    List<Reservation> findByUserId(Integer userId);
+
     @Modifying
     @Transactional
     @Query(value = "ALTER TABLE Reservation ALTER COLUMN id RESTART WITH 1", nativeQuery = true)

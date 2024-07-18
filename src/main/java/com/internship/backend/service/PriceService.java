@@ -64,5 +64,9 @@ public class PriceService {
             throw new RuntimeException("Price does not exist");
 
         priceRepository.deleteById(priceId);
+
+        if(priceRepository.count() == 0){
+            priceRepository.resetAutoIncrementId();
+        }
     }
 }

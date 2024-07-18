@@ -33,7 +33,7 @@ public class ReservationController {
     @PostMapping("/add")
     public ResponseEntity<Reservation> addReservation(@RequestBody ReservationDTO reservationDTO) {
         try{
-            Reservation reservation = reservationService.fromDTO(reservationDTO);
+            Reservation reservation = reservationService.parse(reservationDTO);
             reservationService.addReservation(reservation);
             return ok(reservation);
         }catch(ReservationAlreadyExists e){
@@ -59,7 +59,7 @@ public class ReservationController {
     @PostMapping("/available")
     public ResponseEntity<List<TennisCourt>> getAvailableTennisCourts(@RequestBody DateRangeRequest dateRangeRequest) {
         try{
-            List<TennisCourt> availableTennisCourts = reservationService.getAvailableTennisCourts(dateRangeRequest.getStartDate(), dateRangeRequest.getEndDate());
+            List<TennisCourt> availableTennisCourts = reservationService.getAvailableTennisCourts(dateRangeRequest.start(), dateRangeRequest.end());
             return ResponseEntity.ok(availableTennisCourts);
         }catch(TennisCourtDoesNotExistsException e){
             Log.error("No available tennis courts "+e.getMessage());

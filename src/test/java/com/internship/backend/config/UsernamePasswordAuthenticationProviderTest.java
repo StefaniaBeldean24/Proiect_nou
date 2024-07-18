@@ -14,7 +14,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -44,10 +43,10 @@ class UsernamePasswordAuthenticationProviderTest {
 
         User user = new User();
         user.setUsername(username);
-        user.setPassword(password);
+        user.setPassword(encodedPassword);
         user.setAuthorities(Set.of(new Authority("ROLE_ADMIN")));
 
-        when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
+        when(userRepository.findByUsername(username)).thenReturn(user);
         when(passwordEncoder.matches(password, encodedPassword)).thenReturn(true);
 
         Authentication authentication = new UsernamePasswordAuthenticationToken(username, password);
@@ -67,10 +66,10 @@ class UsernamePasswordAuthenticationProviderTest {
 
         User user = new User();
         user.setUsername(username);
-        user.setPassword(password);
+        user.setPassword(encodedPassword);
         user.setAuthorities(Set.of(new Authority("ROLE_ADMIN")));
 
-        when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
+        when(userRepository.findByUsername(username)).thenReturn(user);
         when(passwordEncoder.matches(password, encodedPassword)).thenReturn(false);
 
         Authentication authentication = new UsernamePasswordAuthenticationToken(username, password);

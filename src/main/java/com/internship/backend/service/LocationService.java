@@ -22,18 +22,13 @@ public class LocationService {
     @Autowired
     private TennisCourtRepository tennisCourtRepository;
 
-    @Autowired
-    private IdGeneratorService idGeneratorService;
-
-    //Logger log = (Logger) LoggerFactory.getLogger(LocationService.class);
-
     public List<Location> getAllLocations(){
         return locationRepository.findAll();
     }
 
     public Location addLocation(Location location) throws LocationAlreadyExistsException {
 
-        location.setId(idGeneratorService.getCurrentId());
+        //location.setId(idGeneratorService.getCurrentId());
 
         if(locationRepository.findByName(location.getName()) != null){
             throw new LocationAlreadyExistsException("Location already exists");
@@ -44,13 +39,16 @@ public class LocationService {
 
     public Location parse(LocationDTO locationDTO){
         Location location = new Location();
-        location.setId(locationDTO.getId());
+        //location.setId(locationDTO.getId());
         location.setName(locationDTO.getName());
         location.setDetails(locationDTO.getDetails());
 
         List<TennisCourt> tennisCourts = new ArrayList<>();
         for (TennisCourt elem : tennisCourtRepository.findAll()){
-            if (elem.getId() == locationDTO.getId()) {
+//            if (elem.getId() == locationDTO.get) {
+//                tennisCourts.add(elem);
+//            }
+            if (elem.getLocation().getName()==locationDTO.getName()){
                 tennisCourts.add(elem);
             }
         }
@@ -71,6 +69,12 @@ public class LocationService {
         if(!locationRepository.existsById(locationID)){
             throw new LocationDoesNotExistException("Location id does not exist");
         }
+
         locationRepository.deleteById(locationID);
+
+        if(locationRepository.count() == 0){
+            locationRepository.resetAutoIncrementId();
+        }
+
     }
 }

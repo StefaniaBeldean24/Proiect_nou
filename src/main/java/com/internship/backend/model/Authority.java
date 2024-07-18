@@ -1,15 +1,18 @@
 package com.internship.backend.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @Table
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Authority {
 
     @Id
@@ -20,6 +23,11 @@ public class Authority {
 
     @JsonBackReference
     @ManyToOne
-    @JoinColumn(name = "users_id")
-    private Users user;
+    @JoinColumn(name = "user_id")
+    private User user;
+
+
+    public Authority(String name) {
+        this.name = name;
+    }
 }

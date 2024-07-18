@@ -1,15 +1,17 @@
 package com.internship.backend.model;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Entity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.data.couchbase.core.mapping.Document;
 
-//nu pot fi programari din ani diferiti
+import java.time.LocalDateTime;
 
-@Document
+@Embeddable
 @Setter
 @Getter
 @NoArgsConstructor
@@ -21,6 +23,17 @@ public class NewDate {
     private int day;
     private int month;
     private int year;
+
+    //I enforce the rule that reservations can only be made for the current date or within the next 24 hours
+    @JsonIgnore
+    public boolean isWithinNext24Hours() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime dateToCheck = LocalDateTime.of(year, month, day, hour, minute);
+
+        LocalDateTime endDate = now.plusHours(24);
+
+        return !dateToCheck.isBefore(now) && !dateToCheck.isAfter(endDate);
+    }
 
     @Override
     public boolean equals(Object o) {

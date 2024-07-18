@@ -4,7 +4,6 @@ import com.internship.backend.dto.PriceDTO;
 import com.internship.backend.exceptions.PriceIdDoesNotExistException;
 import com.internship.backend.model.Price;
 import com.internship.backend.service.PriceService;
-import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
