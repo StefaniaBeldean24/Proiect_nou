@@ -26,7 +26,6 @@ public class Authority {
     @JoinColumn(name = "user_id")
     private User user;
 
-
     public Authority(String name) {
         this.name = name;
     }

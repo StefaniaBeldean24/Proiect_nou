@@ -21,7 +21,6 @@ public class TennisCourt {
     private String name;
     private String details;
 
-    //@ToString.Exclude
     @ManyToOne
     @JoinColumn(name = "location_id", nullable = false)
     @JsonBackReference

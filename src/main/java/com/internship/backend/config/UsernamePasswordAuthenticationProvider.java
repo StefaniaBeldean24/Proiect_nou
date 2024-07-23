@@ -13,6 +13,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import static java.util.Optional.ofNullable;
 
 import java.util.*;
 
@@ -28,9 +29,9 @@ public class UsernamePasswordAuthenticationProvider implements AuthenticationPro
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        String username = authentication.getName();
-        String password = authentication.getCredentials().toString();
-        Optional<User> optionalUser = Optional.ofNullable(userRepository.findByUsername(username));
+        var username = authentication.getName();
+        var password = authentication.getCredentials().toString();
+        var optionalUser = ofNullable(userRepository.findByUsername(username));
         if(optionalUser.isPresent()){
             User user = optionalUser.get();
             if (passwordEncoder.matches(password, user.getPassword())){

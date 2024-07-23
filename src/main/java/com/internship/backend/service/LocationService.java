@@ -27,9 +27,6 @@ public class LocationService {
     }
 
     public Location addLocation(Location location) throws LocationAlreadyExistsException {
-
-        //location.setId(idGeneratorService.getCurrentId());
-
         if(locationRepository.findByName(location.getName()) != null){
             throw new LocationAlreadyExistsException("Location already exists");
         }
@@ -45,10 +42,7 @@ public class LocationService {
 
         List<TennisCourt> tennisCourts = new ArrayList<>();
         for (TennisCourt elem : tennisCourtRepository.findAll()){
-//            if (elem.getId() == locationDTO.get) {
-//                tennisCourts.add(elem);
-//            }
-            if (elem.getLocation().getName()==locationDTO.getName()){
+            if (elem.getLocation().getName() == locationDTO.getName()){
                 tennisCourts.add(elem);
             }
         }

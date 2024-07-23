@@ -31,7 +31,6 @@ public class PriceService {
 
     public Price parse(PriceDTO priceDTO){
         Price price = new Price();
-        price.setId(priceDTO.getId());
         price.setSeason(priceDTO.getSeason());
         price.setPeriodOfDay(priceDTO.getPeriodOfDay());
         price.setPrice(priceDTO.getPrice());

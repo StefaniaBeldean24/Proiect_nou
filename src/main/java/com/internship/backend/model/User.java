@@ -65,7 +65,6 @@ public class User {
     @OneToMany(mappedBy="user", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
     private List<Reservation> reservations;
 
-
     @Override
     public int hashCode() {
         int result = id;

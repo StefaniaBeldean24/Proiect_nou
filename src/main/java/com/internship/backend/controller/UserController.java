@@ -16,8 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 
-import static org.springframework.http.ResponseEntity.notFound;
-import static org.springframework.http.ResponseEntity.ok;
+import static org.springframework.http.ResponseEntity.*;
 
 
 @RestController
@@ -32,12 +31,10 @@ public class UserController {
     public ResponseEntity<User> createUser(@RequestBody UserDTO userDTO) {
 
         try{
-            User user = userService.parse(userDTO);
-            return ok(userService.register(user));
+            return ok(userService.register(userService.parse(userDTO)));
         }catch(UserAlreadyExistsException | EmailAlreadyExistsException e){
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            return status(HttpStatus.CONFLICT).build();
         }
-
     }
 
     @GetMapping("/getAllUsers")
@@ -53,12 +50,10 @@ public class UserController {
     @PutMapping("/update/{id}")
     public ResponseEntity<Object> updateUser(@PathVariable Integer id, @RequestBody UserDTO userDTO) {
         try{
-            User user = userService.parse(userDTO);
-            return ok(userService.updateUser(id, user));
+            return ok(userService.updateUser(id, userService.parse(userDTO)));
         }catch(IdUserNotFoundException e){
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            return status(HttpStatus.CONFLICT).build();
         }
-
     }
 
     @DeleteMapping("/delete/{id}")
@@ -69,7 +64,6 @@ public class UserController {
         }catch(UserDoesNotExistException e){
             return notFound().build();
         }
-
     }
 }
 

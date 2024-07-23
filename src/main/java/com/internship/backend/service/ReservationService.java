@@ -43,8 +43,7 @@ public class ReservationService {
 
         addReservationValidation(reservation);
 
-        if (isValidReservation((reservation)))
-        {
+        if (isValidReservation((reservation))) {
             return reservationRepository.save(reservation);
         }
         else{
@@ -86,7 +85,6 @@ public class ReservationService {
         }
         return true;
     }
-
 
     public Reservation parse(ReservationDTO reservationDTO) {
         Reservation reservation = new Reservation();
@@ -148,7 +146,6 @@ public class ReservationService {
         }
     }
 
-    //metoda in care user-ul sa vada toate terenurile disponibile dintr-o anumita data
    public List<TennisCourt> getAvailableTennisCourts(NewDate startDate, NewDate endDate) throws TennisCourtDoesNotExistsException, InvalidDateException {
         int tennisCourtId;
         List<TennisCourt> tennisCourts = tennisCourtRepository.findAll();

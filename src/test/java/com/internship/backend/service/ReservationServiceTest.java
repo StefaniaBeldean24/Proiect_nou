@@ -46,7 +46,7 @@ class ReservationServiceTest {
     }
 
     @Test
-    void addReservation_validReservation() throws InvalidDateException, ReservationAlreadyExists {
+    void shouldAddValidReservation() throws InvalidDateException, ReservationAlreadyExists {
         //arrange
         Reservation reservation = new Reservation();
         NewDate startTime = new NewDate(0, 17, 18, 7, 2024);
@@ -66,7 +66,7 @@ class ReservationServiceTest {
     }
 
     @Test
-    void addReservation_invalidReservation() throws InvalidDateException, ReservationAlreadyExists {
+    void shouldNotSaveInvalidReservation() throws InvalidDateException, ReservationAlreadyExists {
         //arrange
         Reservation reservation = new Reservation();
         NewDate startTime = new NewDate(0, 17, 18, 7, 2024);
@@ -96,11 +96,11 @@ class ReservationServiceTest {
 
         //assert
         assertEquals(result, reservations);
-        verify(reservationRepository, times(1)).findAll();
+        verify(reservationRepository).findAll();
     }
 
     @Test
-    void update_Valid() throws ReservationAlreadyExists {
+    void shouldUpdateWhenReservationIsValid() throws ReservationAlreadyExists {
         Reservation existingReservation = new Reservation();
         existingReservation.setId(1);
         Reservation newReservation = new Reservation();
@@ -116,7 +116,7 @@ class ReservationServiceTest {
     }
 
     @Test
-    void update_ReservationDoesNotExist() {
+    void shouldNotUpdateWhenReservationIsNotValid() {
         when(reservationRepository.findById(1)).thenReturn(Optional.empty());
 
         ReservationAlreadyExists exception = assertThrows(ReservationAlreadyExists.class, () -> reservationService.update(1, new Reservation()));
@@ -124,19 +124,19 @@ class ReservationServiceTest {
     }
 
     @Test
-    void delete_Valid() throws ReservationDoesNotExistException {
+    void shouldDeleteWhenReservationIsValid() throws ReservationDoesNotExistException {
         when(reservationRepository.existsById(1)).thenReturn(true);
         when(reservationRepository.count()).thenReturn(0L);
 
         reservationService.delete(1);
 
-        verify(reservationRepository, times(1)).deleteById(1);
-        verify(priceRepository, times(1)).deleteById(1);
-        verify(reservationRepository, times(1)).resetAutoIncrementId();
+        verify(reservationRepository).deleteById(1);
+        verify(priceRepository).deleteById(1);
+        verify(reservationRepository).resetAutoIncrementId();
     }
 
     @Test
-    void delete_ReservationDoesNotExist() {
+    void shouldNotDeleteWhenReservationIsNotValid() {
         when(reservationRepository.existsById(1)).thenReturn(false);
 
         ReservationDoesNotExistException exception = assertThrows(ReservationDoesNotExistException.class, () -> reservationService.delete(1));
@@ -144,7 +144,7 @@ class ReservationServiceTest {
     }
 
     @Test
-    void getAvailableTennisCourts_Valid() throws TennisCourtDoesNotExistsException, InvalidDateException {
+    void shouldGetAvailableTennisCourtsWithValidDate() throws TennisCourtDoesNotExistsException, InvalidDateException {
         NewDate startDate = new NewDate(0, 12, 1, 7, 2024);
         NewDate endDate = new NewDate(0, 14, 1, 7, 2024);
         List<TennisCourt> tennisCourts = List.of(new TennisCourt());
@@ -158,7 +158,7 @@ class ReservationServiceTest {
     }
 
     @Test
-    void getAvailableTennisCourts_InvalidDate() {
+    void shouldNotGetAvailableTennisCourtsWithInvalidDate() {
         NewDate startDate = new NewDate(0, 12, 1, 7, 2024);
         NewDate endDate = new NewDate(0, 15, 1, 7, 2024);
 

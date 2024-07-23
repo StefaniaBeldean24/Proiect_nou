@@ -13,10 +13,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
-import static org.springframework.http.ResponseEntity.notFound;
-import static org.springframework.http.ResponseEntity.ok;
+import static java.util.Optional.ofNullable;
+import static org.springframework.http.ResponseEntity.*;
 
 @RestController
 @RequestMapping("api/tennisCourts")
@@ -30,22 +29,19 @@ public class TennisCourtController {
     @PostMapping("/add")
     public ResponseEntity<TennisCourt> addTennisCourt(@RequestBody TennisCourtDTO tennisCourtDTO){
         try{
-            TennisCourt tennisCourt = tennisCourtService.parse(tennisCourtDTO);
-            tennisCourtService.addTennisCourt(tennisCourt);
-            Log.info("Added tennis court "+ tennisCourt.getName());
-            return ok(tennisCourt);
+            Log.info("Added tennis court");
+            return ok(tennisCourtService.addTennisCourt(tennisCourtService.parse(tennisCourtDTO)));
         }catch (TennisCourtAlreadyExistsException e){
             Log.error(e.getMessage());
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+            return status(HttpStatus.CONFLICT).body(null);
         }
 
     }
 
     @GetMapping("/getAll")
     public ResponseEntity<List<TennisCourt>> getAllTennisCourts() {
-        Optional<List<TennisCourt>> tennisCourts = Optional.ofNullable(tennisCourtService.getAllTennisCourts());
-        if(tennisCourts.isPresent()) {
-            Log.info("Get all: ", tennisCourts);
+        if(ofNullable(tennisCourtService.getAllTennisCourts()).isPresent()) {
+            Log.info("Get all: ");
             return ok(tennisCourtService.getAllTennisCourts());
         }
         else {
@@ -57,14 +53,13 @@ public class TennisCourtController {
     @PutMapping("/update/{id}")
     public ResponseEntity<TennisCourt> updateTennisCourt(@PathVariable("id") int tennisCourtId, @RequestBody TennisCourtDTO tennisCourtDTO){
         try{
-            TennisCourt tennisCourt = tennisCourtService.parse(tennisCourtDTO);
-            Optional<TennisCourt> updatedTennisCourt = Optional.ofNullable(tennisCourtService.updateTennisCourt(tennisCourtId, tennisCourt));
-            Log.info("Updating tennisCourt: ", tennisCourt);
+            var updatedTennisCourt = ofNullable(tennisCourtService.updateTennisCourt(tennisCourtId, tennisCourtService.parse(tennisCourtDTO)));
+            Log.info("Updating tennisCourt");
             return ok(updatedTennisCourt.get());
         }catch(TennisCourtDoesNotExistsException e)
         {
             Log.error("Error processing update " + e.getMessage());
-            return ResponseEntity.notFound().build();
+            return notFound().build();
         }
     }
 
@@ -73,10 +68,10 @@ public class TennisCourtController {
         try{
             Log.info("Deleting tennisCourt: " + tennisCourtId);
             tennisCourtService.deleteTennisCourt(tennisCourtId);
-            return ResponseEntity.ok().build();
+            return ok().build();
         }catch(TennisCourtDoesNotExistsException e){
             Log.error("Error processing delete "+ e.getMessage());
-            return ResponseEntity.notFound().build();
+            return notFound().build();
         }
     }
 }

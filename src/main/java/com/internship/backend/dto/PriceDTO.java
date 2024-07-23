@@ -10,7 +10,6 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PriceDTO {
-    private int id;
     private String season;
     private String periodOfDay;
     private int price;
