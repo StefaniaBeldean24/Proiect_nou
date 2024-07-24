@@ -46,7 +46,8 @@ public class LocationController {
         }
         else {
             Log.error("No location found");
-            return notFound().build();
+            return notFound()
+                    .build();
         }
     }
 

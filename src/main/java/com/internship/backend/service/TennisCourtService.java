@@ -21,19 +21,11 @@ public class TennisCourtService {
     @Autowired
     private LocationRepository locationRepository;
 
-//    @Autowired
-//    private IdGeneratorService idGeneratorService;
-
-
     public List<TennisCourt> getAllTennisCourts(){
         return tennisCourtRepository.findAll();
     }
 
-
-
     public TennisCourt addTennisCourt(TennisCourt tennisCourt) throws TennisCourtAlreadyExistsException {
-        //tennisCourt.setId(idGeneratorService.getCurrentId());
-
         Optional<Location> locationOptional = findLocation(tennisCourt.getLocation().getId());
 
         if (locationOptional.isPresent()) {
@@ -58,10 +50,8 @@ public class TennisCourtService {
                 .findFirst();
     }
 
-
     public TennisCourt parse(TennisCourtDTO tennisCourtDTO) {
         TennisCourt tennisCourt = new TennisCourt();
-        //tennisCourt.setId(tennisCourtDTO.getId());
         tennisCourt.setName(tennisCourtDTO.getName());
         tennisCourt.setDetails(tennisCourtDTO.getDetails());
 
