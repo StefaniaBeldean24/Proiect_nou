@@ -12,6 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @Setter
 @Getter
+@Builder
 public class TennisCourt {
 
     @Id
@@ -29,6 +30,4 @@ public class TennisCourt {
     @OneToMany(mappedBy = "tennisCourt", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<Price> prices;
-
-
 }

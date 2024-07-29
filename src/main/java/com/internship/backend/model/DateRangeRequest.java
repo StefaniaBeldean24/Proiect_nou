@@ -1,3 +1,5 @@
 package com.internship.backend.model;
 
-public record DateRangeRequest(NewDate start, NewDate end) {}
+import java.time.LocalDateTime;
+
+public record DateRangeRequest(LocalDateTime start, LocalDateTime end) {}

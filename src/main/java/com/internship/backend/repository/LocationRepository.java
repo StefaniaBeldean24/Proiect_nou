@@ -14,4 +14,6 @@ public interface LocationRepository extends JpaRepository<Location, Integer> {
     @Transactional
     @Query(value = "ALTER TABLE Location ALTER COLUMN id RESTART WITH 1", nativeQuery = true)
     void resetAutoIncrementId();
+
+    boolean existsByName(String name);
 }

@@ -3,58 +3,42 @@ package com.internship.backend.service;
 import com.internship.backend.dto.LocationDTO;
 import com.internship.backend.exceptions.LocationAlreadyExistsException;
 import com.internship.backend.exceptions.LocationDoesNotExistException;
+import com.internship.backend.mappper.LocationMapper;
 import com.internship.backend.model.Location;
-import com.internship.backend.model.TennisCourt;
 import com.internship.backend.repository.LocationRepository;
-import com.internship.backend.repository.TennisCourtRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class LocationService {
+
     @Autowired
     private LocationRepository locationRepository;
 
     @Autowired
-    private TennisCourtRepository tennisCourtRepository;
+    private LocationMapper locationMapper;
 
     public List<Location> getAllLocations(){
         return locationRepository.findAll();
     }
 
-    public Location addLocation(Location location) throws LocationAlreadyExistsException {
-        if(locationRepository.findByName(location.getName()) != null){
+    public Location addLocation(LocationDTO locationDTO) throws LocationAlreadyExistsException {
+        Location location = locationMapper.locationMapper(locationDTO);
+
+        if(locationRepository.existsByName(location.getName())){
             throw new LocationAlreadyExistsException("Location already exists");
         }
-        Location savedLocation = locationRepository.save(location);
-        return savedLocation;
+        return locationRepository.save(location);
     }
 
-    public Location parse(LocationDTO locationDTO){
-        Location location = new Location();
-        //location.setId(locationDTO.getId());
-        location.setName(locationDTO.getName());
-        location.setDetails(locationDTO.getDetails());
-
-        List<TennisCourt> tennisCourts = new ArrayList<>();
-        for (TennisCourt elem : tennisCourtRepository.findAll()){
-            if (elem.getLocation().getName() == locationDTO.getName()){
-                tennisCourts.add(elem);
-            }
-        }
-        location.setTennisCourt(tennisCourts);
-        return location;
-    }
-
-    public Location update(int locationId, Location updatedLocation) throws LocationDoesNotExistException {
+    public Location update(int locationId, LocationDTO updatedLocationDTO) throws LocationDoesNotExistException {
         Location location = locationRepository.findById(locationId).orElseThrow(()->new LocationDoesNotExistException("Location not found"));
 
-        location.setName(updatedLocation.getName());
-        location.setDetails(updatedLocation.getDetails());
+        location.setName(updatedLocationDTO.getName());
+        location.setDetails(updatedLocationDTO.getDetails());
 
         return locationRepository.save(location);
     }

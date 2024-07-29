@@ -2,6 +2,8 @@ package com.internship.backend.service;
 
 import com.internship.backend.dto.PriceDTO;
 import com.internship.backend.exceptions.PriceIdDoesNotExistException;
+import com.internship.backend.exceptions.TennisCourtDoesNotExistsException;
+import com.internship.backend.mappper.PriceMapper;
 import com.internship.backend.model.Price;
 import com.internship.backend.model.TennisCourt;
 import com.internship.backend.repository.PriceRepository;
@@ -21,34 +23,24 @@ public class PriceService {
     @Autowired
     private TennisCourtRepository tennisCourtRepository;
 
+    @Autowired
+    private PriceMapper priceMapper;
+
     public List<Price> getAllPrices(){
         return priceRepository.findAll();
     }
 
-    public Price addPrice(Price price){
+    public Price addPrice(PriceDTO priceDTO) throws TennisCourtDoesNotExistsException {
+        Price price = priceMapper.priceMapper(priceDTO);
         return priceRepository.save(price);
     }
 
-    public Price parse(PriceDTO priceDTO){
-        Price price = new Price();
-        price.setSeason(priceDTO.getSeason());
-        price.setPeriodOfDay(priceDTO.getPeriodOfDay());
-        price.setPrice(priceDTO.getPrice());
-
-        for(TennisCourt court : tennisCourtRepository.findAll()){
-            if(court.getId() == priceDTO.getTennisCourtId()){
-                price.setTennisCourt(court);
-            }
-        }
-        return price;
-    }
-
-    public Price update(int priceId, Price updatedPrice) throws PriceIdDoesNotExistException {
+    public Price update(int priceId, PriceDTO updatedPriceDTO) throws PriceIdDoesNotExistException {
         Price price = priceRepository.findById(priceId).orElseThrow(()-> new PriceIdDoesNotExistException("Price not found"));
 
-        price.setPrice(updatedPrice.getPrice());
-        price.setSeason(updatedPrice.getSeason());
-        price.setPeriodOfDay(updatedPrice.getPeriodOfDay());
+        price.setPrice(updatedPriceDTO.getPrice());
+        price.setSeason(updatedPriceDTO.getSeason());
+        price.setPeriodOfDay(updatedPriceDTO.getPeriodOfDay());
 
         if (priceRepository.count() == 0) {
             priceRepository.resetAutoIncrementId();

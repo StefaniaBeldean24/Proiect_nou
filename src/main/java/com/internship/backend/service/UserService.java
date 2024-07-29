@@ -5,11 +5,10 @@ import com.internship.backend.exceptions.EmailAlreadyExistsException;
 import com.internship.backend.exceptions.IdUserNotFoundException;
 import com.internship.backend.exceptions.UserAlreadyExistsException;
 import com.internship.backend.exceptions.UserDoesNotExistException;
+import com.internship.backend.mappper.UserMapper;
 import com.internship.backend.model.Authority;
-import com.internship.backend.model.Reservation;
 import com.internship.backend.model.User;
 import com.internship.backend.repository.AuthorityRepository;
-import com.internship.backend.repository.ReservationRepository;
 import com.internship.backend.repository.UserRepository;
 
 
@@ -34,13 +33,15 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    Logger logger = LoggerFactory.getLogger(UserService.class);
     @Autowired
-    private ReservationRepository reservationRepository;
+    private UserMapper userMapper;
+
+    Logger logger = LoggerFactory.getLogger(UserService.class);
 
     @Transactional
-    public User register(User user) throws EmailAlreadyExistsException, UserAlreadyExistsException {
+    public User register(UserDTO userDTO) throws EmailAlreadyExistsException, UserAlreadyExistsException {
 
+        User user = userMapper.userMapper(userDTO);
         registerValidation(user);
         String hashPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(hashPassword);
@@ -67,37 +68,6 @@ public class UserService {
         }
     }
 
-    public User parse(UserDTO userDTO) {
-        User user = User.builder()
-                .username(userDTO.getUsername())
-                .password(userDTO.getPassword())
-                .email(userDTO.getEmail())
-                .build();
-
-        Set<Authority> authorities = new HashSet<>();
-        Authority authority = new Authority();
-        authority.setName(userDTO.getRole());
-        authority.setUser(user);
-
-        authorities.add(authority);
-        user.setAuthorities(authorities);
-
-        return user;
-    }
-
-
-    public List<User> getAllUsersWithReservation() {
-        List<User> users = userRepository.findAll();
-
-        users.forEach(user -> {
-            List<Reservation> reservations = reservationRepository.findByUserId(user.getId());
-            user.setReservations(reservations);
-        });
-        logger.info("Number of users: " + users.size());
-        return users;
-    }
-
-
     public List<User> getAllUsers() {
        return userRepository.findAll();
     }
@@ -108,14 +78,18 @@ public class UserService {
     }
 
 
-    public User updateUser(Integer id, User userDetails) throws IdUserNotFoundException {
+    public User updateUser(Integer id, UserDTO userDetailsDTO) throws IdUserNotFoundException {
         Optional<User> optionalUser = userRepository.findById(id);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
-            user.setUsername(userDetails.getUsername());
-            user.setPassword(userDetails.getPassword());
-            user.setEmail(userDetails.getEmail());
-            user.setAuthorities(userDetails.getAuthorities());
+            user.setUsername(userDetailsDTO.getUsername());
+            user.setPassword(userDetailsDTO.getPassword());
+            user.setEmail(userDetailsDTO.getEmail());
+
+            Authority authority = new Authority();
+            authority.setName(userDetailsDTO.getRole());
+            user.setAuthorities(Set.of(authority));
+
             return userRepository.save(user);
         } else {
             throw new IdUserNotFoundException("User not found with id " + id);

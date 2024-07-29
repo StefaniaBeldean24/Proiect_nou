@@ -1,10 +1,11 @@
 package com.internship.backend.dto;
 
-import com.internship.backend.model.NewDate;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.time.LocalDateTime;
 
 
 @Getter
@@ -14,6 +15,6 @@ import lombok.Setter;
 public class ReservationDTO {
     private int userId;
     private int tennisCourtId;
-    private NewDate startTime;
-    private NewDate endTime;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
 }

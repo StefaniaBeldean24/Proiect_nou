@@ -30,9 +30,8 @@ public class LocationController {
     public ResponseEntity<Location> addLocation(@RequestBody LocationDTO locationDTO){
         try{
             Log.info("Added location " + locationDTO.getName());
-            return ok(locationService.addLocation(locationService.parse(locationDTO)));
-        }catch (LocationAlreadyExistsException e)
-        {
+            return ok(locationService.addLocation(locationDTO));
+        }catch (LocationAlreadyExistsException e) {
             Log.error(e.getMessage());
             return status(HttpStatus.CONFLICT).body(null);
         }
@@ -40,11 +39,12 @@ public class LocationController {
 
     @GetMapping("/getAll")
     public ResponseEntity<List<Location>> getAllLocations() {
-        if(ofNullable(locationService.getAllLocations()).isPresent()) {
-            Log.info("Get all: ");
-            return ok(locationService.getAllLocations());
-        }
-        else {
+        List<Location> locations = locationService.getAllLocations();
+
+        if(ofNullable(locations).isPresent()) {
+            Log.info("Get all locations: ");
+            return ok(locations);
+        } else {
             Log.error("No location found");
             return notFound()
                     .build();
@@ -54,10 +54,10 @@ public class LocationController {
     @PutMapping("/update/{id}")
     public ResponseEntity<Location> updateLocation(@PathVariable("id") int locationId, @RequestBody LocationDTO locationDTO){
         try{
-            var updatedLocation = ofNullable(locationService.update(locationId, locationService.parse(locationDTO)));
+            var updatedLocation = ofNullable(locationService.update(locationId, locationDTO));
             Log.info("Updating location: ");
             return ok(updatedLocation.get());
-        }catch(LocationDoesNotExistException e){
+        } catch(LocationDoesNotExistException e) {
             Log.error("Error processing update "+ e.getMessage());
             return notFound().build();
         }
@@ -69,7 +69,7 @@ public class LocationController {
             Log.info("Deleting location: ", locationID);
             locationService.delete(locationID);
             return ok().build();
-        }catch (LocationDoesNotExistException e){
+        } catch (LocationDoesNotExistException e) {
             Log.error("Error processing delete ", e.getMessage());
             return notFound().build();
         }

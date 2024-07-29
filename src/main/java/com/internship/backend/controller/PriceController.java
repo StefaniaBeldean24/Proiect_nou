@@ -2,19 +2,19 @@ package com.internship.backend.controller;
 
 import com.internship.backend.dto.PriceDTO;
 import com.internship.backend.exceptions.PriceIdDoesNotExistException;
+import com.internship.backend.exceptions.TennisCourtDoesNotExistsException;
 import com.internship.backend.model.Price;
 import com.internship.backend.service.PriceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import static java.util.Optional.ofNullable;
-
-import static org.springframework.http.ResponseEntity.notFound;
-import static org.springframework.http.ResponseEntity.ok;
+import static org.springframework.http.ResponseEntity.*;
 
 @RestController
 @RequestMapping("api/prices")
@@ -26,17 +26,21 @@ public class PriceController {
     private PriceService priceService;
 
     @PostMapping("/add")
-    public ResponseEntity<Price> addPrice(@RequestBody PriceDTO priceDTO){
-        return ok(priceService.addPrice(priceService.parse(priceDTO)));
+    public ResponseEntity<Price> addPrice(@RequestBody PriceDTO priceDTO) {
+        try{
+            return ok(priceService.addPrice(priceDTO));
+        } catch(TennisCourtDoesNotExistsException e) {
+            return status(HttpStatus.BAD_REQUEST).build();
+        }
     }
 
     @GetMapping("/getAll")
     public ResponseEntity<List<Price>> getAllPrices(){
-        if(ofNullable(priceService.getAllPrices()).isPresent()){
-            Log.info("Get all: ");
-            return ok(priceService.getAllPrices());
-        }
-        else{
+        List<Price> prices = priceService.getAllPrices();
+        if(ofNullable(prices).isPresent()){
+            Log.info("Get all prices: ");
+            return ok(prices);
+        } else {
             return notFound().build();
         }
     }
@@ -44,11 +48,10 @@ public class PriceController {
     @PutMapping("/update/{id}")
     public ResponseEntity<Price> updatePrice(@PathVariable("id") int priceId, @RequestBody PriceDTO priceDTO){
         try{
-            var updatedPrice = ofNullable(priceService.update(priceId, priceService.parse(priceDTO)));
+            var updatedPrice = ofNullable(priceService.update(priceId, priceDTO));
             Log.info("Updating "+ priceDTO);
             return ok(updatedPrice.get());
-        }
-        catch(PriceIdDoesNotExistException e){
+        } catch(PriceIdDoesNotExistException e) {
             Log.error("Error processing update "+e.getMessage());
             return notFound().build();
         }
@@ -60,7 +63,7 @@ public class PriceController {
             Log.info("Deleting price: "+ priceId);
             priceService.delete(priceId);
             return ok().build();
-        }catch (RuntimeException e) {
+        } catch (RuntimeException e) {
             Log.error("Error processing delete " + e.getMessage());
             return notFound().build();
         }

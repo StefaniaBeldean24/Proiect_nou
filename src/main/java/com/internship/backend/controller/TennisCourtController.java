@@ -30,21 +30,21 @@ public class TennisCourtController {
     public ResponseEntity<TennisCourt> addTennisCourt(@RequestBody TennisCourtDTO tennisCourtDTO){
         try{
             Log.info("Added tennis court");
-            return ok(tennisCourtService.addTennisCourt(tennisCourtService.parse(tennisCourtDTO)));
-        }catch (TennisCourtAlreadyExistsException e){
+            return ok(tennisCourtService.addTennisCourt(tennisCourtDTO));
+        } catch (TennisCourtAlreadyExistsException e) {
             Log.error(e.getMessage());
             return status(HttpStatus.CONFLICT).body(null);
         }
-
     }
 
     @GetMapping("/getAll")
     public ResponseEntity<List<TennisCourt>> getAllTennisCourts() {
-        if(ofNullable(tennisCourtService.getAllTennisCourts()).isPresent()) {
-            Log.info("Get all: ");
-            return ok(tennisCourtService.getAllTennisCourts());
-        }
-        else {
+        List<TennisCourt> tennisCourts = tennisCourtService.getAllTennisCourts();
+
+        if(ofNullable(tennisCourts).isPresent()) {
+            Log.info("Get all tennis courts: ");
+            return ok(tennisCourts);
+        } else {
             Log.error("No tennis court found");
             return notFound().build();
         }
@@ -53,11 +53,10 @@ public class TennisCourtController {
     @PutMapping("/update/{id}")
     public ResponseEntity<TennisCourt> updateTennisCourt(@PathVariable("id") int tennisCourtId, @RequestBody TennisCourtDTO tennisCourtDTO){
         try{
-            var updatedTennisCourt = ofNullable(tennisCourtService.updateTennisCourt(tennisCourtId, tennisCourtService.parse(tennisCourtDTO)));
+            var updatedTennisCourt = ofNullable(tennisCourtService.updateTennisCourt(tennisCourtId, tennisCourtDTO));
             Log.info("Updating tennisCourt");
             return ok(updatedTennisCourt.get());
-        }catch(TennisCourtDoesNotExistsException e)
-        {
+        } catch(TennisCourtDoesNotExistsException e) {
             Log.error("Error processing update " + e.getMessage());
             return notFound().build();
         }
@@ -69,7 +68,7 @@ public class TennisCourtController {
             Log.info("Deleting tennisCourt: " + tennisCourtId);
             tennisCourtService.deleteTennisCourt(tennisCourtId);
             return ok().build();
-        }catch(TennisCourtDoesNotExistsException e){
+        } catch(TennisCourtDoesNotExistsException e) {
             Log.error("Error processing delete "+ e.getMessage());
             return notFound().build();
         }
