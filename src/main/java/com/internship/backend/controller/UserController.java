@@ -51,7 +51,6 @@ public class UserController {
         } else {
             return notFound().build();
         }
-
     }
 
     @GetMapping("/{id}")

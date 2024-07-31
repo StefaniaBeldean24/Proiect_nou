@@ -33,14 +33,20 @@ public class AuthorityService {
         return authority;
     }
 
+    public void resetAutoIncrement() {
+        if (authorityRepository.count() == 0) {
+            authorityRepository.resetAutoIncrementId();
+        }
+    }
+
     public void delete(int authorityId){
         if (!authorityRepository.existsById(authorityId)) {
             throw new EntityNotFoundException("User not found");
         }
+
         authorityRepository.deleteById(authorityId);
-        if (authorityRepository.count() == 0) {
-            authorityRepository.resetAutoIncrementId();
-        }
+
+        resetAutoIncrement();
     }
 
     public List<Authority> getAllAuthorities() {

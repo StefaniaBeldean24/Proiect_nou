@@ -31,7 +31,7 @@ public class PriceService {
 
     public Price addPrice(PriceDTO priceDTO) throws TennisCourtDoesNotExistsException {
         TennisCourt tennisCourt = tennisCourtRepository.findById(priceDTO.getTennisCourtId())
-                .orElseThrow(()-> new TennisCourtDoesNotExistsException("TennisCourt not found"));
+                .orElseThrow(() -> new TennisCourtDoesNotExistsException("TennisCourt not found"));
 
         Price price = priceMapper.mapToPrice(priceDTO, tennisCourt);
         return priceRepository.save(price);
@@ -39,29 +39,38 @@ public class PriceService {
 
     public Price update(int priceId, PriceDTO updatedPriceDTO) throws PriceIdDoesNotExistException, TennisCourtDoesNotExistsException {
         Price price = priceRepository.findById(priceId)
-                .orElseThrow(()-> new PriceIdDoesNotExistException("Price not found"));
+                .orElseThrow(() -> new PriceIdDoesNotExistException("Price not found"));
 
         TennisCourt tennisCourt = tennisCourtRepository.findById(updatedPriceDTO.getTennisCourtId())
-                .orElseThrow(()-> new TennisCourtDoesNotExistsException("TennisCourt not found"));
+                .orElseThrow(() -> new TennisCourtDoesNotExistsException("TennisCourt not found"));
 
-        price.setPrice(updatedPriceDTO.getPrice());
-        price.setSeason(updatedPriceDTO.getSeason());
-        price.setPeriodOfDay(updatedPriceDTO.getPeriodOfDay());
-        price.setTennisCourt(tennisCourt);
+        setPriceSeasonPeriodTennisCourt(price, updatedPriceDTO.getPrice(), updatedPriceDTO.getSeason(),
+                updatedPriceDTO.getPeriodOfDay(), tennisCourt);
 
-        if (priceRepository.count() == 0) {
-            priceRepository.resetAutoIncrementId();
-        }
+        resetAutoIncrement();
 
         return priceRepository.save(price);
     }
 
-    public void delete(int priceId) throws PriceIdDoesNotExistException {
-        if(!priceRepository.existsById(priceId))
-            throw new PriceIdDoesNotExistException("Price does not exist");
-        priceRepository.deleteById(priceId);
-        if(priceRepository.count() == 0){
+    public void resetAutoIncrement() {
+        if (priceRepository.count() == 0) {
             priceRepository.resetAutoIncrementId();
         }
+    }
+
+    public void setPriceSeasonPeriodTennisCourt(Price price, Integer cost, String season, String periodOfDay, TennisCourt tennisCourt) {
+        price.setPrice(cost);
+        price.setSeason(season);
+        price.setPeriodOfDay(periodOfDay);
+        price.setTennisCourt(tennisCourt);
+    }
+
+    public void delete(int priceId) throws PriceIdDoesNotExistException {
+        if (!priceRepository.existsById(priceId)) {
+            throw new PriceIdDoesNotExistException("Price does not exist");
+        }
+
+        priceRepository.deleteById(priceId);
+       resetAutoIncrement();
     }
 }

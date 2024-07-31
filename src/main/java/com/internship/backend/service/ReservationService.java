@@ -72,9 +72,22 @@ public class ReservationService {
         return startTime.isBefore(endTime);
     }
 
+    public void resetAutoIncrement() {
+        if (reservationRepository.count() == 0) {
+            reservationRepository.resetAutoIncrementId();
+        }
+    }
+
+    public void setTimeTennicCourtUser(Reservation reservation, LocalDateTime startTime, LocalDateTime endTime, TennisCourt tennisCourt, User user) {
+        reservation.setStartTime(startTime);
+        reservation.setEndTime(endTime);
+        reservation.setTennisCourt(tennisCourt);
+        reservation.setUser(user);
+    }
 
     public Reservation update(int reservationId, ReservationDTO newReservationDTO) throws ReservationAlreadyExists, TennisCourtDoesNotExistsException, UserDoesNotExistException {
-        Reservation reservation = reservationRepository.findById(reservationId).orElseThrow(()->new ReservationAlreadyExists("Reservation not found"));
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new ReservationAlreadyExists("Reservation not found"));
 
         User user = userRepository.findById(newReservationDTO.getUserId())
                 .orElseThrow(() -> new UserDoesNotExistException("User not found"));
@@ -83,28 +96,22 @@ public class ReservationService {
                 .orElseThrow(() -> new TennisCourtDoesNotExistsException("TennisCourt not found"));
 
         Reservation updatedReservation = reservationMapper.mapToReservation(newReservationDTO, user, tennisCourt);
-        reservation.setStartTime(updatedReservation.getStartTime());
-        reservation.setEndTime(updatedReservation.getEndTime());
-        reservation.setTennisCourt(updatedReservation.getTennisCourt());
-        reservation.setUser(updatedReservation.getUser());
+        setTimeTennicCourtUser(updatedReservation, updatedReservation.getStartTime(), updatedReservation.getEndTime(), tennisCourt, user);
 
-        if (reservationRepository.count() == 0) {
-            reservationRepository.resetAutoIncrementId();
-        }
+        resetAutoIncrement();
 
         return reservationRepository.save(reservation);
     }
 
     public void delete(int reservationId) throws ReservationDoesNotExistException {
-        if (!reservationRepository.existsById(reservationId))
+        if (!reservationRepository.existsById(reservationId)) {
             throw new ReservationDoesNotExistException("Reservation not found");
+        }
 
         reservationRepository.deleteById(reservationId);
         priceRepository.deleteById(reservationId);
 
-        if (reservationRepository.count() == 0) {
-            reservationRepository.resetAutoIncrementId();
-        }
+       resetAutoIncrement();
     }
 
     public void getAvailableTennisCourtsValidation(LocalDateTime startDate, LocalDateTime endDate) throws InvalidDateException {
@@ -138,6 +145,7 @@ public class ReservationService {
                 }
             }
         }
+
         if (!tennisCourts.isEmpty()) {
             return tennisCourts;
         } else {

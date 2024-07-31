@@ -36,12 +36,16 @@ public class UserService {
     public User register(UserDTO userDTO) throws EmailAlreadyExistsException, UserAlreadyExistsException {
         User user = userMapper.mapToUser(userDTO);
         registerValidation(user);
+
         String hashPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(hashPassword);
+
         User savedUser = userRepository.save(user);
+
         Set<Authority> authorities = user.getAuthorities();
         Iterator<Authority> iterator = authorities.iterator();
         authorityRepository.save(iterator.next());
+
         return savedUser;
     }
 
@@ -71,23 +75,31 @@ public class UserService {
 
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
-            user.setUsername(userDetailsDTO.getUsername());
-            user.setPassword(userDetailsDTO.getPassword());
-            user.setEmail(userDetailsDTO.getEmail());
+            setUsernamePasswordEmail(user, userDetailsDTO.getUsername(), userDetailsDTO.getPassword(), userDetailsDTO.getEmail());
+
             Authority authority = new Authority();
             authority.setName(userDetailsDTO.getRole());
             user.setAuthorities(Set.of(authority));
+
             return userRepository.save(user);
         } else {
             throw new IdUserNotFoundException("User not found with id " + id);
         }
     }
 
+    public void setUsernamePasswordEmail(User user, String username, String password, String email) {
+        user.setUsername(username);
+        user.setPassword(password);
+        user.setEmail(email);
+    }
+
     public void deleteUser(Integer id) throws UserDoesNotExistException {
         if (!userRepository.existsById(id)) {
             throw new UserDoesNotExistException("User does not exisit");
         }
+
         userRepository.deleteById(id);
+
         if(userRepository.count() == 0){
             userRepository.resetAutoIncrementId();
         }

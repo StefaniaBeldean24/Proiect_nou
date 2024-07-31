@@ -65,12 +65,18 @@ public class TennisCourtService {
         return tennisCourtRepository.save(tennisCourt);
     }
 
-    public void deleteTennisCourt(int tennisCourtId) throws TennisCourtDoesNotExistsException {
-        if (!tennisCourtRepository.existsById(tennisCourtId))
-            throw new TennisCourtDoesNotExistsException("TennisCourt does not exist");
-        tennisCourtRepository.deleteById(tennisCourtId);
+    public void resetAutoIncrement() {
         if (locationRepository.count() == 0) {
             locationRepository.resetAutoIncrementId();
         }
+    }
+
+    public void deleteTennisCourt(int tennisCourtId) throws TennisCourtDoesNotExistsException {
+        if (!tennisCourtRepository.existsById(tennisCourtId))
+            throw new TennisCourtDoesNotExistsException("TennisCourt does not exist");
+
+        tennisCourtRepository.deleteById(tennisCourtId);
+
+        resetAutoIncrement();
     }
 }

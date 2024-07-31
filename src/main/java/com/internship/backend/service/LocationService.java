@@ -30,6 +30,7 @@ public class LocationService {
         if (locationRepository.existsByName(location.getName())) {
             throw new LocationAlreadyExistsException("Location already exists");
         }
+
         return locationRepository.save(location);
     }
 
@@ -37,20 +38,25 @@ public class LocationService {
         Location location = locationRepository.findById(locationId)
                 .orElseThrow(() -> new LocationDoesNotExistException("Location not found"));
 
-        location.setName(updatedLocationDTO.getName());
-        location.setDetails(updatedLocationDTO.getDetails());
+        setNameAndDetails(location, updatedLocationDTO.getName(), updatedLocationDTO.getDetails());
 
         return locationRepository.save(location);
+    }
+
+    public void setNameAndDetails(Location location, String name, String details) {
+        location.setName(name);
+        location.setDetails(details);
     }
 
     public void delete(int locationID) throws LocationDoesNotExistException {
         if (!locationRepository.existsById(locationID)) {
             throw new LocationDoesNotExistException("Location id does not exist");
         }
+
         locationRepository.deleteById(locationID);
+
         if (locationRepository.count() == 0) {
             locationRepository.resetAutoIncrementId();
         }
-
     }
 }
