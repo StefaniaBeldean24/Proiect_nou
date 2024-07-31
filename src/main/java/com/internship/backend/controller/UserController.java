@@ -11,13 +11,13 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
 
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.ResponseEntity.*;
 import static java.util.Optional.ofNullable;
 
@@ -34,18 +34,18 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<User> createUser(@RequestBody UserDTO userDTO) {
-        try{
+        try {
             Log.info("User has been registered");
             return ok(userService.register(userDTO));
-        } catch(UserAlreadyExistsException | EmailAlreadyExistsException e) {
-            return status(HttpStatus.CONFLICT).build();
+        } catch (UserAlreadyExistsException | EmailAlreadyExistsException e) {
+            return status(CONFLICT).build();
         }
     }
 
     @GetMapping("/getAllUsers")
     public ResponseEntity<List<User>> getAllUsers() {
         List<User> users = userService.getAllUsers();
-        if(ofNullable(users).isPresent()) {
+        if (ofNullable(users).isPresent()) {
             Log.info("Get all users: ");
             return ok(users);
         } else {
@@ -61,21 +61,21 @@ public class UserController {
 
     @PutMapping("/update/{id}")
     public ResponseEntity<Object> updateUser(@PathVariable Integer id, @RequestBody UserDTO userDTO) {
-        try{
+        try {
             Log.info("User has been updated");
             return ok(userService.updateUser(id, userDTO));
-        } catch(IdUserNotFoundException e) {
-            return status(HttpStatus.CONFLICT).build();
+        } catch (IdUserNotFoundException e) {
+            return status(CONFLICT).build();
         }
     }
 
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<User> deleteUser(@PathVariable Integer id) {
-        try{
+        try {
             Log.info("Delete user with id " + id);
             userService.deleteUser(id);
             return ok().build();
-        } catch(UserDoesNotExistException e) {
+        } catch (UserDoesNotExistException e) {
             return notFound().build();
         }
     }

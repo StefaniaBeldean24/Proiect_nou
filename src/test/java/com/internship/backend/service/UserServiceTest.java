@@ -16,17 +16,21 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
+import static java.util.Optional.empty;
+import static java.util.List.of;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@ActiveProfiles("test")
 class UserServiceTest {
 
     @InjectMocks
@@ -52,7 +56,18 @@ class UserServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        user = User.builder()
+        user = createDefaultUser();
+
+        userDTO = createDefaultUserDTO();
+
+        authority = createDefaultAuthority();
+
+        user.getAuthorities().add(authority);
+        users = of(user);
+    }
+
+    private User createDefaultUser() {
+        return User.builder()
                 .id(1)
                 .username("test")
                 .password("password")
@@ -60,24 +75,25 @@ class UserServiceTest {
                 .authorities(new HashSet<>())
                 .reservations(new ArrayList<>())
                 .build();
+    }
 
-        userDTO = new UserDTO("ROLE_ADMIN", "userDTO", "password", "userDTO@yahoo.com");
+    private UserDTO createDefaultUserDTO() {
+        return new UserDTO("ROLE_ADMIN", "userDTO", "password", "userDTO@yahoo.com");
+    }
 
-        authority = Authority.builder()
+    private Authority createDefaultAuthority() {
+        return Authority.builder()
                 .name("ROLE_ADMIN")
                 .user(user)
                 .build();
-
-        user.getAuthorities().add(authority);
-        users = List.of(user);
     }
 
     @Test
-    void register() throws EmailAlreadyExistsException, UserAlreadyExistsException {
+    void shouldRegisterNewUser() throws EmailAlreadyExistsException, UserAlreadyExistsException {
         when(userRepository.findByUsername("userDTO")).thenReturn(null);
         when(userRepository.findByEmail("userDTO@yahoo.com")).thenReturn(null);
         when(passwordEncoder.encode("password")).thenReturn("$2a$12$302xzRikiGdJmeistkERbu5r66ulhUPRL5v1lyNGL6kqWHTqRMDY6");
-        when(userMapper.userMapper(any(UserDTO.class))).thenReturn(user);
+        when(userMapper.mapToUser(userDTO)).thenReturn(user);
         when(userRepository.save(any(User.class))).thenReturn(user);
         when(authorityRepository.save(any(Authority.class))).thenReturn(authority);
 
@@ -89,23 +105,23 @@ class UserServiceTest {
     }
 
     @Test
-    void testRegisterWithExistingUsername() {
+    void shouldNotRegisterWithExistingUsername() {
         when(userRepository.findByUsername("test")).thenReturn(user);
-        when(userMapper.userMapper(any(UserDTO.class))).thenReturn(user);
+        when(userMapper.mapToUser(userDTO)).thenReturn(user);
 
         assertThrows(UserAlreadyExistsException.class, () -> userService.register(userDTO));
     }
 
     @Test
-    void testRegisterWithExistingEmail() {
+    void shouldNotRegisterWithExistingEmail() {
         when(userRepository.findByEmail("email@yahoo.com")).thenReturn(user);
-        when(userMapper.userMapper(any(UserDTO.class))).thenReturn(user);
+        when(userMapper.mapToUser(userDTO)).thenReturn(user);
 
         assertThrows(EmailAlreadyExistsException.class, () -> userService.register(userDTO));
     }
 
     @Test
-    void getAllUsers() {
+    void shouldRetrieveAllUsers() {
         when(userRepository.findAll()).thenReturn(users);
 
         List<User> result = userService.getAllUsers();
@@ -115,7 +131,7 @@ class UserServiceTest {
     }
 
     @Test
-    void getUserById() {
+    void shouldRetrieveUsersById() {
         when(userRepository.findById(1)).thenReturn(Optional.of(user));
 
         Optional<User> result = userService.getUserById(1);
@@ -125,7 +141,7 @@ class UserServiceTest {
     }
 
     @Test
-    void updateUser() throws IdUserNotFoundException {
+    void shouldUpdateUser() throws IdUserNotFoundException {
         when(userRepository.findById(1)).thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class))).thenReturn(user);
 
@@ -138,8 +154,8 @@ class UserServiceTest {
     }
 
     @Test
-    void testUpdateUserNotFound() {
-        when(userRepository.findById(1)).thenReturn(Optional.empty());
+    void shouldNotUpdateNonExistingUSer() {
+        when(userRepository.findById(1)).thenReturn(empty());
 
         UserDTO userDetailsDTO = new UserDTO("ROLE_USER", "newUser", "newPassword", "newEmail@yahoo.com");
 
@@ -147,7 +163,7 @@ class UserServiceTest {
     }
 
     @Test
-    void deleteUser() throws UserDoesNotExistException {
+    void shouldDeleteUser() throws UserDoesNotExistException {
         when(userRepository.existsById(1)).thenReturn(true);
 
         userService.deleteUser(1);
@@ -156,7 +172,7 @@ class UserServiceTest {
     }
 
     @Test
-    void testDeleteUserNotFound() {
+    void shouldNotDeleteNonExistingUser() {
         when(userRepository.existsById(1)).thenReturn(false);
 
         assertThrows(UserDoesNotExistException.class, () -> userService.deleteUser(1));

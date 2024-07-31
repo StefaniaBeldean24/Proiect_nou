@@ -1,9 +1,9 @@
 package com.internship.backend.service;
 
 import com.internship.backend.dto.TennisCourtDTO;
+import com.internship.backend.exceptions.LocationDoesNotExistException;
 import com.internship.backend.exceptions.TennisCourtAlreadyExistsException;
 import com.internship.backend.exceptions.TennisCourtDoesNotExistsException;
-import com.internship.backend.mappper.LocationMapper;
 import com.internship.backend.mappper.TennisCourtMapper;
 import com.internship.backend.model.Location;
 import com.internship.backend.model.TennisCourt;
@@ -23,21 +23,20 @@ public class TennisCourtService {
     @Autowired
     private LocationRepository locationRepository;
 
-    @Autowired
-    TennisCourtMapper tennisCourtMapper;
+    TennisCourtMapper tennisCourtMapper = new TennisCourtMapper();
 
     public List<TennisCourt> getAllTennisCourts(){
         return tennisCourtRepository.findAll();
     }
 
+    public TennisCourt addTennisCourt(TennisCourtDTO tennisCourtDTO) throws TennisCourtAlreadyExistsException, LocationDoesNotExistException {
+        Location location = locationRepository.findById(tennisCourtDTO.getLocationId())
+                .orElseThrow(() -> new LocationDoesNotExistException("Location not found"));
 
-    public TennisCourt addTennisCourt(TennisCourtDTO tennisCourtDTO) throws TennisCourtAlreadyExistsException {
-        TennisCourt tennisCourt = tennisCourtMapper.tennisCourtMapper(tennisCourtDTO);
+        TennisCourt tennisCourt = tennisCourtMapper.mapToTennisCourt(tennisCourtDTO, location);
         Optional<Location> locationOptional = findLocation(tennisCourt.getLocation().getId());
 
         if (locationOptional.isPresent()) {
-            Location location = locationOptional.get();
-
             if (!location.getTennisCourt().contains(tennisCourt)) {
                 List<TennisCourt> tennisCourtList = location.getTennisCourt();
                 tennisCourtList.add(tennisCourt);
@@ -57,7 +56,8 @@ public class TennisCourtService {
     }
 
     public TennisCourt updateTennisCourt(int tennisCourtId, TennisCourtDTO newTennisCourtDTO) throws TennisCourtDoesNotExistsException {
-        TennisCourt tennisCourt = tennisCourtRepository.findById(tennisCourtId).orElseThrow(()->new TennisCourtDoesNotExistsException("TennisCourt not found!"));
+        TennisCourt tennisCourt = tennisCourtRepository.findById(tennisCourtId)
+                .orElseThrow(() -> new TennisCourtDoesNotExistsException("TennisCourt not found!"));
 
         tennisCourt.setName(newTennisCourtDTO.getName());
         tennisCourt.setDetails(newTennisCourtDTO.getDetails());
@@ -66,12 +66,10 @@ public class TennisCourtService {
     }
 
     public void deleteTennisCourt(int tennisCourtId) throws TennisCourtDoesNotExistsException {
-        if(!tennisCourtRepository.existsById(tennisCourtId))
+        if (!tennisCourtRepository.existsById(tennisCourtId))
             throw new TennisCourtDoesNotExistsException("TennisCourt does not exist");
-
         tennisCourtRepository.deleteById(tennisCourtId);
-
-        if(locationRepository.count() == 0){
+        if (locationRepository.count() == 0) {
             locationRepository.resetAutoIncrementId();
         }
     }

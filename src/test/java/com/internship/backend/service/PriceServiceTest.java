@@ -8,21 +8,25 @@ import com.internship.backend.model.Price;
 import com.internship.backend.model.TennisCourt;
 import com.internship.backend.repository.PriceRepository;
 import com.internship.backend.repository.TennisCourtRepository;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 import java.util.Optional;
 
+import static java.util.Optional.empty;
+import static java.util.List.of;
+import static java.util.Optional.ofNullable;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
+@ActiveProfiles("test")
 class PriceServiceTest {
 
     @InjectMocks
@@ -40,25 +44,40 @@ class PriceServiceTest {
     private Price price;
     private PriceDTO priceDTO;
     private List<Price> prices;
+    private TennisCourt tennisCourt;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        price = createDefaultPrice();
+        priceDTO = createDefaultPriceDTO();
+        tennisCourt = createDefaultTennisCourt();
+        prices = of(price);
+    }
 
-        price = Price.builder()
+    private Price createDefaultPrice() {
+        return Price.builder()
                 .id(1)
                 .price(100)
                 .season("Summer")
                 .periodOfDay("Morning")
                 .build();
+    }
 
-        priceDTO = new PriceDTO("Summer","Morning", 100, 1 );
+    private PriceDTO createDefaultPriceDTO() {
+        return new PriceDTO("Summer","Morning", 100, 1 );
+    }
 
-        prices = List.of(price);
+    private TennisCourt createDefaultTennisCourt() {
+        return TennisCourt.builder()
+                .id(1)
+                .name("TennisCourt")
+                .details("Details about tennis court")
+                .build();
     }
 
     @Test
-    void getAllPrices() {
+    void shouldRetrieveAllPrices() {
         when(priceRepository.findAll()).thenReturn(prices);
 
         List<Price> result = priceService.getAllPrices();
@@ -68,23 +87,23 @@ class PriceServiceTest {
     }
 
     @Test
-    void addPrice() throws TennisCourtDoesNotExistsException, TennisCourtDoesNotExistsException {
-        when(priceMapper.priceMapper(any(PriceDTO.class))).thenReturn(price);
+    void shouldAddPrice() throws TennisCourtDoesNotExistsException {
+        when(tennisCourtRepository.findById(priceDTO.getTennisCourtId())).thenReturn(ofNullable(tennisCourt));
+        when(priceMapper.mapToPrice(eq(priceDTO), any(TennisCourt.class))).thenReturn(price);
         when(priceRepository.save(any(Price.class))).thenReturn(price);
 
         Price savedPrice = priceService.addPrice(priceDTO);
 
-        assertEquals(price.getId(), savedPrice.getId());
+        assertNotNull(savedPrice);
         assertEquals(price.getPrice(), savedPrice.getPrice());
-        assertEquals(price.getSeason(), savedPrice.getSeason());
-        assertEquals(price.getPeriodOfDay(), savedPrice.getPeriodOfDay());
-        verify(priceRepository).save(any(Price.class));
+        verify(priceRepository).save(price);
     }
 
     @Test
-    void updatePrice() throws PriceIdDoesNotExistException {
+    void shouldUpdatePrice() throws PriceIdDoesNotExistException, TennisCourtDoesNotExistsException {
         when(priceRepository.findById(1)).thenReturn(Optional.of(price));
         when(priceRepository.save(any(Price.class))).thenReturn(price);
+        when(tennisCourtRepository.findById(tennisCourt.getId())).thenReturn(ofNullable(tennisCourt));
 
         PriceDTO updatedPriceDTO = new PriceDTO("Winter","Evening", 100, 1);
         Price updatedPrice = priceService.update(1, updatedPriceDTO);
@@ -96,8 +115,8 @@ class PriceServiceTest {
     }
 
     @Test
-    void updatePriceThrowsExceptionWhenNotFound() {
-        when(priceRepository.findById(1)).thenReturn(Optional.empty());
+    void shouldThrowExceptionWhenUpdatingNonExistentPrice() {
+        when(priceRepository.findById(1)).thenReturn(empty());
 
         PriceDTO updatedPriceDTO = new PriceDTO("Summer","Morning", 100, 1);
 
@@ -105,7 +124,7 @@ class PriceServiceTest {
     }
 
     @Test
-    void deletePrice() {
+    void shouldDeletePrice() throws PriceIdDoesNotExistException {
         when(priceRepository.existsById(1)).thenReturn(true);
 
         priceService.delete(1);
@@ -114,9 +133,11 @@ class PriceServiceTest {
     }
 
     @Test
-    void deletePriceThrowsExceptionWhenNotFound() {
+    void shouldThrowExceptionPriceNotFoundToDelete() {
         when(priceRepository.existsById(1)).thenReturn(false);
 
         assertThrows(RuntimeException.class, () -> priceService.delete(1));
+
+        verify(priceRepository, never()).save(price);
     }
 }

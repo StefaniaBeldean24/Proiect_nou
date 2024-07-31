@@ -12,7 +12,6 @@ public class ReservationValidator {
 
     private Reservation reservation;
 
-
     public ReservationValidator(Reservation reservation) {
         this.reservation = reservation;
     }
@@ -20,15 +19,15 @@ public class ReservationValidator {
     public void validate() throws InvalidDateException {
         LocalDateTime now = LocalDateTime.now();
 
-        if(reservation.getStartTime().isBefore(now) ||  reservation.getStartTime().isAfter(now.plusHours(24))){
+        if (reservation.getStartTime().isBefore(now) ||  reservation.getStartTime().isAfter(now.plusHours(24))) {
             throw new InvalidDateException(INVALID_DATE_ERROR);
         }
 
-        if(!reservation.getStartTime().toLocalDate().equals(reservation.getEndTime().toLocalDate())){
+        if (!reservation.getStartTime().toLocalDate().equals(reservation.getEndTime().toLocalDate())) {
             throw new InvalidDateException(DIFFERENT_DAY_ERROR);
         }
 
-        if(reservation.getEndTime().getHour() - reservation.getStartTime().getHour() != 2){
+        if (reservation.getEndTime().getHour() - reservation.getStartTime().getHour() != 2) {
             throw new InvalidDateException(INVALID_DURATION_ERROR);
         }
     }

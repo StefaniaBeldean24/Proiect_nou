@@ -1,6 +1,7 @@
 package com.internship.backend.service;
 
 import com.internship.backend.dto.TennisCourtDTO;
+import com.internship.backend.exceptions.LocationDoesNotExistException;
 import com.internship.backend.exceptions.TennisCourtAlreadyExistsException;
 import com.internship.backend.exceptions.TennisCourtDoesNotExistsException;
 import com.internship.backend.mappper.TennisCourtMapper;
@@ -8,22 +9,24 @@ import com.internship.backend.model.Location;
 import com.internship.backend.model.TennisCourt;
 import com.internship.backend.repository.LocationRepository;
 import com.internship.backend.repository.TennisCourtRepository;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static java.util.Optional.empty;
+import static java.util.List.of;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
+@ActiveProfiles("test")
 class TennisCourtServiceTest {
 
     @InjectMocks
@@ -46,27 +49,38 @@ class TennisCourtServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        location = Location.builder()
+        location = createDefaultLocation();
+
+        tennisCourt = createDefaultTennisCourt();
+
+        tennisCourtDTO = createDefaultTennisCourtDTO();
+
+        tennisCourts = of(tennisCourt);
+    }
+
+    private Location createDefaultLocation() {
+        return Location.builder()
                 .id(1)
                 .name("Location1")
                 .tennisCourt(new ArrayList<>())
                 .build();
+    }
 
-        tennisCourt = TennisCourt.builder()
+    private TennisCourt createDefaultTennisCourt() {
+        return TennisCourt.builder()
                 .id(1)
                 .name("Court1")
                 .details("Details")
                 .location(location)
                 .build();
+    }
 
-        tennisCourtDTO = new TennisCourtDTO("Court1", "Details", location.getId());
-
-        tennisCourts = new ArrayList<>();
-        tennisCourts.add(tennisCourt);
+    private TennisCourtDTO createDefaultTennisCourtDTO() {
+        return new TennisCourtDTO("Court1", "Details", location.getId());
     }
 
     @Test
-    void getAllTennisCourts() {
+    void shouldRetrieveAllTennisCourts() {
         when(tennisCourtRepository.findAll()).thenReturn(tennisCourts);
 
         List<TennisCourt> result = tennisCourtService.getAllTennisCourts();
@@ -76,24 +90,26 @@ class TennisCourtServiceTest {
     }
 
     @Test
-    void addTennisCourt() throws TennisCourtAlreadyExistsException {
-        when(tennisCourtMapper.tennisCourtMapper(any(TennisCourtDTO.class))).thenReturn(tennisCourt);
-        when(locationRepository.findAll()).thenReturn(List.of(location));
-        when(tennisCourtRepository.save(any(TennisCourt.class))).thenReturn(tennisCourt);
+    void addTennisCourt() throws TennisCourtAlreadyExistsException, LocationDoesNotExistException {
+        when(tennisCourtMapper.mapToTennisCourt(tennisCourtDTO, location)).thenReturn(tennisCourt);
+        when(locationRepository.findAll()).thenReturn((of(location)));
+        when(locationRepository.findById(tennisCourtDTO.getLocationId())).thenReturn(Optional.of(location));
+        when(tennisCourtRepository.save(tennisCourt)).thenReturn(tennisCourt);
 
         TennisCourt savedTennisCourt = tennisCourtService.addTennisCourt(tennisCourtDTO);
 
-        assertEquals("Court1", savedTennisCourt.getName());
+        assertNotNull(savedTennisCourt);
+        assertEquals(tennisCourt, savedTennisCourt);
         verify(tennisCourtRepository).save(any(TennisCourt.class));
     }
 
     @Test
-    void addTennisCourtThrowsExceptionWhenAlreadyExists() {
-        location.getTennisCourt().add(tennisCourt);
-        when(tennisCourtMapper.tennisCourtMapper(any(TennisCourtDTO.class))).thenReturn(tennisCourt);
-        when(locationRepository.findAll()).thenReturn(List.of(location));
+    void shouldThrowExceptionWhenAddingTennisCourtToNonExistingLocation() {
+        when(locationRepository.findById(tennisCourtDTO.getLocationId())).thenReturn(empty());
 
-        assertThrows(TennisCourtAlreadyExistsException.class, () -> tennisCourtService.addTennisCourt(tennisCourtDTO));
+        assertThrows(LocationDoesNotExistException.class, () -> tennisCourtService.addTennisCourt(tennisCourtDTO));
+
+        verify(tennisCourtRepository, never()).save(tennisCourt);
     }
 
     @Test
@@ -110,7 +126,7 @@ class TennisCourtServiceTest {
 
     @Test
     void updateTennisCourtThrowsExceptionWhenNotFound() {
-        when(tennisCourtRepository.findById(1)).thenReturn(Optional.empty());
+        when(tennisCourtRepository.findById(1)).thenReturn(empty());
 
         TennisCourtDTO newTennisCourtDTO = new TennisCourtDTO("UpdatedCourt", "UpdatedDetails", location.getId());
 

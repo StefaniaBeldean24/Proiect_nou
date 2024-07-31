@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static java.util.Optional.ofNullable;
 import static org.springframework.http.ResponseEntity.*;
 
@@ -27,17 +28,17 @@ public class PriceController {
 
     @PostMapping("/add")
     public ResponseEntity<Price> addPrice(@RequestBody PriceDTO priceDTO) {
-        try{
+        try {
             return ok(priceService.addPrice(priceDTO));
-        } catch(TennisCourtDoesNotExistsException e) {
-            return status(HttpStatus.BAD_REQUEST).build();
+        } catch (TennisCourtDoesNotExistsException e) {
+            return status(BAD_REQUEST).build();
         }
     }
 
     @GetMapping("/getAll")
     public ResponseEntity<List<Price>> getAllPrices(){
         List<Price> prices = priceService.getAllPrices();
-        if(ofNullable(prices).isPresent()){
+        if (ofNullable(prices).isPresent()){
             Log.info("Get all prices: ");
             return ok(prices);
         } else {
@@ -51,19 +52,21 @@ public class PriceController {
             var updatedPrice = ofNullable(priceService.update(priceId, priceDTO));
             Log.info("Updating "+ priceDTO);
             return ok(updatedPrice.get());
-        } catch(PriceIdDoesNotExistException e) {
+        } catch (PriceIdDoesNotExistException e) {
             Log.error("Error processing update "+e.getMessage());
             return notFound().build();
+        } catch (TennisCourtDoesNotExistsException e) {
+            return status(BAD_REQUEST).build();
         }
     }
 
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Price> deletePrice(@PathVariable("id") int priceId){
-        try{
+        try {
             Log.info("Deleting price: "+ priceId);
             priceService.delete(priceId);
             return ok().build();
-        } catch (RuntimeException e) {
+        } catch (PriceIdDoesNotExistException e) {
             Log.error("Error processing delete " + e.getMessage());
             return notFound().build();
         }

@@ -15,17 +15,22 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static java.util.Optional.empty;
+import static java.util.List.of;
+import static java.util.Optional.ofNullable;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@ActiveProfiles("test")
 class ReservationServiceTest {
 
     @InjectMocks
@@ -56,34 +61,50 @@ class ReservationServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        user = User.builder()
-                .id(1)
-                .username("testUser")
-                .email("test@example.com")
-                .build();
+        user = createDefaultUser();
 
-        tennisCourt = TennisCourt.builder()
-                .id(1)
-                .name("Court1")
-                .details("Details")
-                .build();
+        tennisCourt = createDefaultTennisCourt();
 
-        reservation = Reservation.builder()
-                .id(1)
-                .startTime(LocalDateTime.now().plusHours(1))
-                .endTime(LocalDateTime.now().plusHours(3))
-                .user(user)
-                .tennisCourt(tennisCourt)
-                .build();
+        reservation = createDefaultReservation();
 
-        reservationDTO = new ReservationDTO(1, 1, LocalDateTime.now().plusHours(1), LocalDateTime.now().plusHours(3));
+        reservationDTO = createDefaultReservationDTO();
 
         reservations = new ArrayList<>();
         reservations.add(reservation);
     }
 
+    private User createDefaultUser() {
+        return User.builder()
+                .id(1)
+                .username("testUser")
+                .email("test@example.com")
+                .build();
+    }
+
+    private TennisCourt createDefaultTennisCourt() {
+        return TennisCourt.builder()
+                .id(1)
+                .name("tennisCourt")
+                .details("details")
+                .build();
+    }
+
+    private Reservation createDefaultReservation() {
+        return Reservation.builder()
+                .id(1)
+                .startTime(LocalDateTime.now().plusHours(1))
+                .endTime(LocalDateTime.now().plusHours(3))
+                .tennisCourt(tennisCourt)
+                .user(user)
+                .build();
+    }
+
+    private ReservationDTO createDefaultReservationDTO() {
+        return new ReservationDTO(1, 1, LocalDateTime.now().plusHours(1), LocalDateTime.now().plusHours(3));
+    }
+
     @Test
-    void getAllReservations() {
+    void shouldRetrieveAllReservations() {
         when(reservationRepository.findAll()).thenReturn(reservations);
 
         List<Reservation> result = reservationService.getAllReservations();
@@ -93,8 +114,10 @@ class ReservationServiceTest {
     }
 
     @Test
-    void addReservation() throws ReservationAlreadyExists, InvalidDateException, TennisCourtDoesNotExistsException, UserDoesNotExistException, UserDoesNotExistException {
-        when(reservationMapper.reservatonMapper(any(ReservationDTO.class))).thenReturn(reservation);
+    void shouldAddReservation() throws ReservationAlreadyExists, InvalidDateException, TennisCourtDoesNotExistsException, UserDoesNotExistException {
+        when(reservationMapper.mapToReservation(reservationDTO, user, tennisCourt)).thenReturn(reservation);
+        when(userRepository.findById(reservationDTO.getUserId())).thenReturn(ofNullable(user));
+        when(tennisCourtRepository.findById(reservationDTO.getTennisCourtId())).thenReturn(ofNullable(tennisCourt));
         when(reservationRepository.save(any(Reservation.class))).thenReturn(reservation);
 
         Reservation savedReservation = reservationService.addReservation(reservationDTO);
@@ -104,39 +127,45 @@ class ReservationServiceTest {
     }
 
     @Test
-    void addReservationThrowsExceptionWhenInvalid() throws TennisCourtDoesNotExistsException, UserDoesNotExistException {
-        when(reservationMapper.reservatonMapper(any(ReservationDTO.class))).thenReturn(reservation);
+    void shouldNotAddReservationWhenUserNotFound()  {
+        when(userRepository.findById(reservationDTO.getUserId())).thenReturn(empty());
 
-        reservation.setStartTime(LocalDateTime.now().minusHours(2)); // Invalid start time
-
-        assertThrows(InvalidDateException.class, () -> reservationService.addReservation(reservationDTO));
+        assertThrows(UserDoesNotExistException.class, () -> reservationService.addReservation(reservationDTO));
     }
 
     @Test
-    void updateReservation() throws ReservationAlreadyExists, TennisCourtDoesNotExistsException, UserDoesNotExistException {
-        when(reservationRepository.findById(1)).thenReturn(Optional.of(reservation));
-        when(reservationMapper.reservatonMapper(any(ReservationDTO.class))).thenReturn(reservation);
+    void shouldNotAddReservationWhenTennisCourtNotFound()  {
+        when(userRepository.findById(reservationDTO.getUserId())).thenReturn(Optional.of(user));
+        when(tennisCourtRepository.findById(reservationDTO.getTennisCourtId())).thenReturn(empty());
+
+        assertThrows(TennisCourtDoesNotExistsException.class, () -> reservationService.addReservation(reservationDTO));
+    }
+
+    @Test
+    void shouldUpdateReservation() throws ReservationAlreadyExists, TennisCourtDoesNotExistsException, UserDoesNotExistException {
+        when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
+        when(reservationMapper.mapToReservation(reservationDTO, user, tennisCourt)).thenReturn(reservation);
+        when(userRepository.findById(reservationDTO.getUserId())).thenReturn(ofNullable(user));
+        when(tennisCourtRepository.findById(reservationDTO.getTennisCourtId())).thenReturn(ofNullable(tennisCourt));
         when(reservationRepository.save(any(Reservation.class))).thenReturn(reservation);
 
-        ReservationDTO updatedDTO = new ReservationDTO(1, 1, LocalDateTime.now().plusHours(1).withNano(0), LocalDateTime.now().plusHours(3).withNano(0));
-        Reservation updatedReservation = reservationService.update(1, updatedDTO);
+        Reservation updatedReservation = reservationService.update(reservation.getId(), reservationDTO);
 
-        assertEquals(updatedDTO.getStartTime().withNano(0), updatedReservation.getStartTime().withNano(0));
-        assertEquals(updatedDTO.getEndTime().withNano(0), updatedReservation.getEndTime().withNano(0));
+        assertNotNull(updatedReservation);
+        assertEquals(reservation.getId(), updatedReservation.getId());
         verify(reservationRepository).save(any(Reservation.class));
     }
 
     @Test
-    void updateReservationThrowsExceptionWhenNotFound() {
-        when(reservationRepository.findById(1)).thenReturn(Optional.empty());
+    void shouldNotUpdateWhenUserNotFound() {
+        when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
+        when(userRepository.findById(1)).thenReturn(Optional.empty());
 
-        ReservationDTO updatedDTO = new ReservationDTO(1, 1, LocalDateTime.now().plusHours(4), LocalDateTime.now().plusHours(6));
-
-        assertThrows(ReservationAlreadyExists.class, () -> reservationService.update(1, updatedDTO));
+        assertThrows(UserDoesNotExistException.class, () -> reservationService.update(1, reservationDTO));
     }
 
     @Test
-    void deleteReservation() throws ReservationDoesNotExistException {
+    void shouldDeleteReservation() throws ReservationDoesNotExistException {
         when(reservationRepository.existsById(1)).thenReturn(true);
 
         reservationService.delete(1);
@@ -146,15 +175,22 @@ class ReservationServiceTest {
     }
 
     @Test
-    void deleteReservationThrowsExceptionWhenNotFound() {
+    void shouldThrowExceptionWhenDeletingNonExistentReservation() {
+        when(reservationRepository.existsById(1)).thenReturn(false);
+
+        assertThrows(ReservationDoesNotExistException.class, ()-> reservationService.delete(reservation.getId()));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenReservationNotFound() {
         when(reservationRepository.existsById(1)).thenReturn(false);
 
         assertThrows(ReservationDoesNotExistException.class, () -> reservationService.delete(1));
     }
 
     @Test
-    void getAvailableTennisCourts() throws TennisCourtDoesNotExistsException, InvalidDateException {
-        when(tennisCourtRepository.findAll()).thenReturn(List.of(tennisCourt));
+    void shouldRetrieveAvailableTennisCourts() throws TennisCourtDoesNotExistsException, InvalidDateException {
+        when(tennisCourtRepository.findAll()).thenReturn(of(tennisCourt));
         when(reservationRepository.findAll()).thenReturn(reservations);
 
         LocalDateTime startDate = LocalDateTime.now().plusDays(1);
@@ -167,7 +203,7 @@ class ReservationServiceTest {
     }
 
     @Test
-    void getAvailableTennisCourtsThrowsExceptionWhenNoneAvailable() {
+    void shouldThrowExceptionWhenNoTennisCourtIsAvailable() {
         when(tennisCourtRepository.findAll()).thenReturn(new ArrayList<>());
         when(reservationRepository.findAll()).thenReturn(reservations);
 

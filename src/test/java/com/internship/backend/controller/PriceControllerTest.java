@@ -11,6 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -23,6 +24,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@ActiveProfiles("test")
 class PriceControllerTest {
     @InjectMocks
     private PriceController priceController;
@@ -39,18 +41,22 @@ class PriceControllerTest {
         MockitoAnnotations.openMocks(this);
         mockMvc = MockMvcBuilders.standaloneSetup(priceController).build();
 
-        price = Price.builder()
+        price = createDefaultPrice();
+
+        prices = List.of(price);
+    }
+
+    private Price createDefaultPrice() {
+        return Price.builder()
                 .id(1)
                 .price(100)
                 .season("Summer")
                 .periodOfDay("Morning")
                 .build();
-
-        prices = List.of(price);
     }
 
     @Test
-    void addPrice() throws Exception {
+    void shouldAddPrice() throws Exception {
         when(priceService.addPrice(any(PriceDTO.class))).thenReturn(price);
 
         mockMvc.perform(post("/api/prices/add")
@@ -65,7 +71,7 @@ class PriceControllerTest {
     }
 
     @Test
-    void addPriceThrowsBadRequest() throws Exception {
+    void shouldNotAddPriceForNonExistingTennisCourt() throws Exception {
         when(priceService.addPrice(any(PriceDTO.class))).thenThrow(TennisCourtDoesNotExistsException.class);
 
         mockMvc.perform(post("/api/prices/add")
@@ -77,7 +83,7 @@ class PriceControllerTest {
     }
 
     @Test
-    void getAllPrices() throws Exception {
+    void shouldRetrieveAllPrices() throws Exception {
         when(priceService.getAllPrices()).thenReturn(prices);
 
         mockMvc.perform(get("/api/prices/getAll")
@@ -92,7 +98,7 @@ class PriceControllerTest {
     }
 
     @Test
-    void updatePrice() throws Exception {
+    void shouldUpdatePrice() throws Exception {
         when(priceService.update(anyInt(), any(PriceDTO.class))).thenReturn(price);
 
         mockMvc.perform(put("/api/prices/update/{id}", 1)
@@ -107,7 +113,7 @@ class PriceControllerTest {
     }
 
     @Test
-    void updatePriceThrowsNotFound() throws Exception {
+    void shouldNotUpdateNonExistingPrice() throws Exception {
         when(priceService.update(anyInt(), any(PriceDTO.class))).thenThrow(PriceIdDoesNotExistException.class);
 
         mockMvc.perform(put("/api/prices/update/{id}", 1)
@@ -119,7 +125,7 @@ class PriceControllerTest {
     }
 
     @Test
-    void deletePrice() throws Exception {
+    void shouldDeletePrice() throws Exception {
         doNothing().when(priceService).delete(anyInt());
 
         mockMvc.perform(delete("/api/prices/delete/{id}", 1)
@@ -130,8 +136,8 @@ class PriceControllerTest {
     }
 
     @Test
-    void deletePriceThrowsNotFound() throws Exception {
-        doThrow(RuntimeException.class).when(priceService).delete(anyInt());
+    void shouldNotDeleteNonExistentPrice() throws Exception {
+        doThrow(PriceIdDoesNotExistException.class).when(priceService).delete(anyInt());
 
         mockMvc.perform(delete("/api/prices/delete/{id}", 1)
                         .contentType(MediaType.APPLICATION_JSON))

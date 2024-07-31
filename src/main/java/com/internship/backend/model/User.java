@@ -16,9 +16,6 @@ import java.util.Set;
 
 
 @Entity
-@NamedStoredProcedureQuery(name = "Users.getAllUsersProcedure",
-procedureName = "getAllUsersProcedure")
-
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter

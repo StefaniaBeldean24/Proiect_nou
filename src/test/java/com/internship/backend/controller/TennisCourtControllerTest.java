@@ -11,6 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -22,6 +23,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@ActiveProfiles("test")
 class TennisCourtControllerTest {
 
     @InjectMocks
@@ -39,17 +41,21 @@ class TennisCourtControllerTest {
         MockitoAnnotations.openMocks(this);
         mockMvc = MockMvcBuilders.standaloneSetup(tennisCourtController).build();
 
-        tennisCourt = TennisCourt.builder()
-                .id(1)
-                .name("tennisCourt")
-                .details("details")
-                .build();
+        tennisCourt = createDefaultTennisCourt();
 
         tennisCourts = List.of(tennisCourt);
     }
 
+    private TennisCourt createDefaultTennisCourt() {
+        return TennisCourt.builder()
+                .id(1)
+                .name("tennisCourt")
+                .details("details")
+                .build();
+    }
+
     @Test
-    void addTennisCourt() throws Exception {
+    void shouldAddTennisCourt() throws Exception {
         when(tennisCourtService.addTennisCourt(any(TennisCourtDTO.class))).thenReturn(tennisCourt);
 
         mockMvc.perform(post("/api/tennisCourts/add")
@@ -63,7 +69,7 @@ class TennisCourtControllerTest {
     }
 
     @Test
-    void addTennisCourtThrowsConflict() throws Exception {
+    void shouldThrowErrorWhenAddingDuplicateTennisCourt() throws Exception {
         when(tennisCourtService.addTennisCourt(any(TennisCourtDTO.class))).thenThrow(TennisCourtAlreadyExistsException.class);
 
         mockMvc.perform(post("/api/tennisCourts/add")
@@ -75,7 +81,7 @@ class TennisCourtControllerTest {
     }
 
     @Test
-    void getAllTennisCourts() throws Exception {
+    void shouldRetrieveAllTennisCourts() throws Exception {
         when(tennisCourtService.getAllTennisCourts()).thenReturn(tennisCourts);
 
         mockMvc.perform(get("/api/tennisCourts/getAll")
@@ -88,7 +94,7 @@ class TennisCourtControllerTest {
     }
 
     @Test
-    void updateTennisCourt() throws Exception {
+    void shouldUpdateTennisCourt() throws Exception {
         when(tennisCourtService.updateTennisCourt(anyInt(), any(TennisCourtDTO.class))).thenReturn(tennisCourt);
 
         mockMvc.perform(put("/api/tennisCourts/update/{id}", 1)
@@ -102,7 +108,7 @@ class TennisCourtControllerTest {
     }
 
     @Test
-    void updateTennisCourtThrowsNotFound() throws Exception {
+    void shouldThrowErrorWhenUpdatingNonExistentTennisCourt() throws Exception {
         when(tennisCourtService.updateTennisCourt(anyInt(), any(TennisCourtDTO.class))).thenThrow(TennisCourtDoesNotExistsException.class);
 
         mockMvc.perform(put("/api/tennisCourts/update/{id}", 1)
@@ -114,7 +120,7 @@ class TennisCourtControllerTest {
     }
 
     @Test
-    void deleteTennisCourt() throws Exception {
+    void shouldDeleteTennisCourt() throws Exception {
         doNothing().when(tennisCourtService).deleteTennisCourt(anyInt());
 
         mockMvc.perform(delete("/api/tennisCourts/delete/{id}", 1)
@@ -125,7 +131,7 @@ class TennisCourtControllerTest {
     }
 
     @Test
-    void deleteTennisCourtThrowsNotFound() throws Exception {
+    void shouldThrowErrorWhenUserNotFoundToDelete() throws Exception {
         doThrow(TennisCourtDoesNotExistsException.class).when(tennisCourtService).deleteTennisCourt(anyInt());
 
         mockMvc.perform(delete("/api/tennisCourts/delete/{id}", 1)

@@ -23,39 +23,43 @@ public class PriceService {
     @Autowired
     private TennisCourtRepository tennisCourtRepository;
 
-    @Autowired
-    private PriceMapper priceMapper;
+    private PriceMapper priceMapper = new PriceMapper();
 
     public List<Price> getAllPrices(){
         return priceRepository.findAll();
     }
 
     public Price addPrice(PriceDTO priceDTO) throws TennisCourtDoesNotExistsException {
-        Price price = priceMapper.priceMapper(priceDTO);
+        TennisCourt tennisCourt = tennisCourtRepository.findById(priceDTO.getTennisCourtId())
+                .orElseThrow(()-> new TennisCourtDoesNotExistsException("TennisCourt not found"));
+
+        Price price = priceMapper.mapToPrice(priceDTO, tennisCourt);
         return priceRepository.save(price);
     }
 
-    public Price update(int priceId, PriceDTO updatedPriceDTO) throws PriceIdDoesNotExistException {
-        Price price = priceRepository.findById(priceId).orElseThrow(()-> new PriceIdDoesNotExistException("Price not found"));
+    public Price update(int priceId, PriceDTO updatedPriceDTO) throws PriceIdDoesNotExistException, TennisCourtDoesNotExistsException {
+        Price price = priceRepository.findById(priceId)
+                .orElseThrow(()-> new PriceIdDoesNotExistException("Price not found"));
+
+        TennisCourt tennisCourt = tennisCourtRepository.findById(updatedPriceDTO.getTennisCourtId())
+                .orElseThrow(()-> new TennisCourtDoesNotExistsException("TennisCourt not found"));
 
         price.setPrice(updatedPriceDTO.getPrice());
         price.setSeason(updatedPriceDTO.getSeason());
         price.setPeriodOfDay(updatedPriceDTO.getPeriodOfDay());
+        price.setTennisCourt(tennisCourt);
 
         if (priceRepository.count() == 0) {
             priceRepository.resetAutoIncrementId();
         }
 
         return priceRepository.save(price);
-
     }
 
-    public void delete(int priceId){
+    public void delete(int priceId) throws PriceIdDoesNotExistException {
         if(!priceRepository.existsById(priceId))
-            throw new RuntimeException("Price does not exist");
-
+            throw new PriceIdDoesNotExistException("Price does not exist");
         priceRepository.deleteById(priceId);
-
         if(priceRepository.count() == 0){
             priceRepository.resetAutoIncrementId();
         }

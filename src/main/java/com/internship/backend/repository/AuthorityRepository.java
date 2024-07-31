@@ -10,10 +10,6 @@ import org.springframework.data.repository.query.Param;
 public interface AuthorityRepository extends JpaRepository<Authority, Integer> {
 
     @Modifying
-    @Query("DELETE FROM Authority a where a.user.id = :userId")
-    void deleteByUserId(@Param("userId") int userId);
-
-    @Modifying
     @Transactional
     @Query(value = "ALTER TABLE Authority ALTER COLUMN id RESTART WITH 1", nativeQuery = true)
     void resetAutoIncrementId();

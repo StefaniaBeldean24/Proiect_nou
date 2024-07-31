@@ -10,6 +10,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -22,7 +23,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-
+@ActiveProfiles("test")
 class LocationControllerTest {
 
     @InjectMocks
@@ -50,7 +51,7 @@ class LocationControllerTest {
     }
 
     @Test
-    void addLocation() throws Exception {
+    void shouldAddLocation() throws Exception {
         when(locationService.addLocation(any(LocationDTO.class))).thenReturn(location);
 
         mockMvc.perform(post("/api/locations/add")
@@ -64,7 +65,7 @@ class LocationControllerTest {
     }
 
     @Test
-    void addLocationThrowsConflict() throws Exception {
+    void shouldNotAddDuplicateLocation() throws Exception {
         when(locationService.addLocation(any(LocationDTO.class))).thenThrow(LocationAlreadyExistsException.class);
 
         mockMvc.perform(post("/api/locations/add")
@@ -76,7 +77,7 @@ class LocationControllerTest {
     }
 
     @Test
-    void getAllLocations() throws Exception {
+    void shouldRetrieveLocations() throws Exception {
         when(locationService.getAllLocations()).thenReturn(locations);
 
         mockMvc.perform(get("/api/locations/getAll")
@@ -90,7 +91,7 @@ class LocationControllerTest {
     }
 
     @Test
-    void updateLocation() throws Exception {
+    void shouldUpdateLocation() throws Exception {
         when(locationService.update(anyInt(), any(LocationDTO.class))).thenReturn(location);
 
         mockMvc.perform(put("/api/locations/update/{id}", 1)
@@ -104,7 +105,7 @@ class LocationControllerTest {
     }
 
     @Test
-    void updateLocationThrowsNotFound() throws Exception {
+    void shouldNotUpdateNonExistentLocation() throws Exception {
         when(locationService.update(anyInt(), any(LocationDTO.class))).thenThrow(LocationDoesNotExistException.class);
 
         mockMvc.perform(put("/api/locations/update/{id}", 1)
@@ -116,7 +117,7 @@ class LocationControllerTest {
     }
 
     @Test
-    void deleteLocation() throws Exception {
+    void shouldDeleteLocation() throws Exception {
         doNothing().when(locationService).delete(anyInt());
 
         mockMvc.perform(delete("/api/locations/delete/{id}", 1)
@@ -127,7 +128,7 @@ class LocationControllerTest {
     }
 
     @Test
-    void deleteLocationThrowsNotFound() throws Exception {
+    void shouldNotDeleteNonExistentLocation() throws Exception {
         doThrow(LocationDoesNotExistException.class).when(locationService).delete(anyInt());
 
         mockMvc.perform(delete("/api/locations/delete/{id}", 1)

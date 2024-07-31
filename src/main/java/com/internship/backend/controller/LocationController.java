@@ -8,11 +8,11 @@ import com.internship.backend.service.LocationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static java.util.Optional.ofNullable;
 
 import static org.springframework.http.ResponseEntity.*;
@@ -28,20 +28,19 @@ public class LocationController {
 
     @PostMapping("/add")
     public ResponseEntity<Location> addLocation(@RequestBody LocationDTO locationDTO){
-        try{
+        try {
             Log.info("Added location " + locationDTO.getName());
             return ok(locationService.addLocation(locationDTO));
-        }catch (LocationAlreadyExistsException e) {
+        } catch (LocationAlreadyExistsException e) {
             Log.error(e.getMessage());
-            return status(HttpStatus.CONFLICT).body(null);
+            return status(CONFLICT).body(null);
         }
     }
 
     @GetMapping("/getAll")
     public ResponseEntity<List<Location>> getAllLocations() {
         List<Location> locations = locationService.getAllLocations();
-
-        if(ofNullable(locations).isPresent()) {
+        if (ofNullable(locations).isPresent()) {
             Log.info("Get all locations: ");
             return ok(locations);
         } else {
@@ -53,11 +52,11 @@ public class LocationController {
 
     @PutMapping("/update/{id}")
     public ResponseEntity<Location> updateLocation(@PathVariable("id") int locationId, @RequestBody LocationDTO locationDTO){
-        try{
+        try {
             var updatedLocation = ofNullable(locationService.update(locationId, locationDTO));
             Log.info("Updating location: ");
             return ok(updatedLocation.get());
-        } catch(LocationDoesNotExistException e) {
+        } catch (LocationDoesNotExistException e) {
             Log.error("Error processing update "+ e.getMessage());
             return notFound().build();
         }
@@ -65,7 +64,7 @@ public class LocationController {
 
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Location> deleteLocation(@PathVariable("id") int locationID){
-        try{
+        try {
             Log.info("Deleting location: ", locationID);
             locationService.delete(locationID);
             return ok().build();
@@ -74,5 +73,4 @@ public class LocationController {
             return notFound().build();
         }
     }
-
 }

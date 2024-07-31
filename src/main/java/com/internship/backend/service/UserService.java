@@ -10,17 +10,15 @@ import com.internship.backend.model.Authority;
 import com.internship.backend.model.User;
 import com.internship.backend.repository.AuthorityRepository;
 import com.internship.backend.repository.UserRepository;
-
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 
 import java.util.*;
+
+import static java.util.Optional.ofNullable;
+
 @Service
 public class UserService {
 
@@ -33,36 +31,28 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private UserMapper userMapper;
+    private UserMapper userMapper = new UserMapper();
 
-    Logger logger = LoggerFactory.getLogger(UserService.class);
-
-    @Transactional
     public User register(UserDTO userDTO) throws EmailAlreadyExistsException, UserAlreadyExistsException {
-
-        User user = userMapper.userMapper(userDTO);
+        User user = userMapper.mapToUser(userDTO);
         registerValidation(user);
         String hashPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(hashPassword);
-
         User savedUser = userRepository.save(user);
-
         Set<Authority> authorities = user.getAuthorities();
         Iterator<Authority> iterator = authorities.iterator();
         authorityRepository.save(iterator.next());
-
         return savedUser;
     }
 
     private void registerValidation(User user) throws UserAlreadyExistsException, EmailAlreadyExistsException{
-
-        Optional<User> findByUsername = Optional.ofNullable(userRepository.findByUsername(user.getUsername()));
-        Optional<User> findByEmail = Optional.ofNullable(userRepository.findByEmail(user.getEmail()));
+        Optional<User> findByUsername = ofNullable(userRepository.findByUsername(user.getUsername()));
+        Optional<User> findByEmail = ofNullable(userRepository.findByEmail(user.getEmail()));
 
         if (findByUsername.isPresent()) {
             throw new UserAlreadyExistsException("Username already exists");
         }
+
         if (findByEmail.isPresent()) {
             throw new EmailAlreadyExistsException("Email already exists");
         }
@@ -72,24 +62,21 @@ public class UserService {
        return userRepository.findAll();
     }
 
-
     public Optional<User> getUserById(Integer id) {
         return userRepository.findById(id);
     }
 
-
     public User updateUser(Integer id, UserDTO userDetailsDTO) throws IdUserNotFoundException {
         Optional<User> optionalUser = userRepository.findById(id);
+
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
             user.setUsername(userDetailsDTO.getUsername());
             user.setPassword(userDetailsDTO.getPassword());
             user.setEmail(userDetailsDTO.getEmail());
-
             Authority authority = new Authority();
             authority.setName(userDetailsDTO.getRole());
             user.setAuthorities(Set.of(authority));
-
             return userRepository.save(user);
         } else {
             throw new IdUserNotFoundException("User not found with id " + id);
@@ -97,11 +84,10 @@ public class UserService {
     }
 
     public void deleteUser(Integer id) throws UserDoesNotExistException {
-        if(!userRepository.existsById(id)){
+        if (!userRepository.existsById(id)) {
             throw new UserDoesNotExistException("User does not exisit");
         }
         userRepository.deleteById(id);
-
         if(userRepository.count() == 0){
             userRepository.resetAutoIncrementId();
         }

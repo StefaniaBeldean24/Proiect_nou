@@ -18,24 +18,24 @@ public class LocationService {
     @Autowired
     private LocationRepository locationRepository;
 
-    @Autowired
-    private LocationMapper locationMapper;
+    private LocationMapper locationMapper = new LocationMapper();
 
     public List<Location> getAllLocations(){
         return locationRepository.findAll();
     }
 
     public Location addLocation(LocationDTO locationDTO) throws LocationAlreadyExistsException {
-        Location location = locationMapper.locationMapper(locationDTO);
+        Location location = locationMapper.mapToLocation(locationDTO);
 
-        if(locationRepository.existsByName(location.getName())){
+        if (locationRepository.existsByName(location.getName())) {
             throw new LocationAlreadyExistsException("Location already exists");
         }
         return locationRepository.save(location);
     }
 
     public Location update(int locationId, LocationDTO updatedLocationDTO) throws LocationDoesNotExistException {
-        Location location = locationRepository.findById(locationId).orElseThrow(()->new LocationDoesNotExistException("Location not found"));
+        Location location = locationRepository.findById(locationId)
+                .orElseThrow(() -> new LocationDoesNotExistException("Location not found"));
 
         location.setName(updatedLocationDTO.getName());
         location.setDetails(updatedLocationDTO.getDetails());
@@ -44,13 +44,11 @@ public class LocationService {
     }
 
     public void delete(int locationID) throws LocationDoesNotExistException {
-        if(!locationRepository.existsById(locationID)){
+        if (!locationRepository.existsById(locationID)) {
             throw new LocationDoesNotExistException("Location id does not exist");
         }
-
         locationRepository.deleteById(locationID);
-
-        if(locationRepository.count() == 0){
+        if (locationRepository.count() == 0) {
             locationRepository.resetAutoIncrementId();
         }
 

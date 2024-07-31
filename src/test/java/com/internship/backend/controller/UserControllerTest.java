@@ -13,10 +13,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,6 +26,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@ActiveProfiles("test")
 class UserControllerTest {
 
     @InjectMocks
@@ -44,18 +44,22 @@ class UserControllerTest {
         MockitoAnnotations.openMocks(this);
         mockMvc = MockMvcBuilders.standaloneSetup(userController).build();
 
-        user = User.builder()
+        user = createDefaultUser();
+
+        users = List.of(user);
+    }
+
+    private User createDefaultUser() {
+        return User.builder()
                 .id(1)
                 .username("testUser")
                 .email("test@example.com")
                 .password("password")
                 .build();
-
-        users = List.of(user);
     }
 
     @Test
-    void createUser() throws Exception {
+    void shouldCreateUser() throws Exception {
         when(userService.register(any(UserDTO.class))).thenReturn(user);
 
         mockMvc.perform(post("/api/users/register")
@@ -69,7 +73,7 @@ class UserControllerTest {
     }
 
     @Test
-    void createUserThrowsConflict() throws Exception {
+    void shouldThrowErrorWhenAddingDuplicateUser() throws Exception {
         when(userService.register(any(UserDTO.class))).thenThrow(UserAlreadyExistsException.class);
 
         mockMvc.perform(post("/api/users/register")
@@ -81,7 +85,7 @@ class UserControllerTest {
     }
 
     @Test
-    void getAllUsers() throws Exception {
+    void shouldRetrieveAllUsers() throws Exception {
         when(userService.getAllUsers()).thenReturn(users);
 
         mockMvc.perform(get("/api/users/getAllUsers")
@@ -95,7 +99,7 @@ class UserControllerTest {
     }
 
     @Test
-    void getUserById() throws Exception {
+    void shouldRetrieveUsersById() throws Exception {
         when(userService.getUserById(anyInt())).thenReturn(Optional.of(user));
 
         mockMvc.perform(get("/api/users/{id}", 1)
@@ -108,7 +112,7 @@ class UserControllerTest {
     }
 
     @Test
-    void updateUser() throws Exception {
+    void shouldUpdateUser() throws Exception {
         when(userService.updateUser(anyInt(), any(UserDTO.class))).thenReturn(user);
 
         mockMvc.perform(put("/api/users/update/{id}", 1)
@@ -122,7 +126,7 @@ class UserControllerTest {
     }
 
     @Test
-    void updateUserThrowsConflict() throws Exception {
+    void shouldThrowErrorWhenUpdatingNonExistentUser() throws Exception {
         when(userService.updateUser(anyInt(), any(UserDTO.class))).thenThrow(IdUserNotFoundException.class);
 
         mockMvc.perform(put("/api/users/update/{id}", 1)
@@ -134,7 +138,7 @@ class UserControllerTest {
     }
 
     @Test
-    void deleteUser() throws Exception {
+    void shouldDeleteUser() throws Exception {
         doNothing().when(userService).deleteUser(anyInt());
 
         mockMvc.perform(delete("/api/users/delete/{id}", 1)
@@ -145,7 +149,7 @@ class UserControllerTest {
     }
 
     @Test
-    void deleteUserThrowsNotFound() throws Exception {
+    void shouldThrowErrorWhenDeletingNonExistentUser() throws Exception {
         doThrow(UserDoesNotExistException.class).when(userService).deleteUser(anyInt());
 
         mockMvc.perform(delete("/api/users/delete/{id}", 1)

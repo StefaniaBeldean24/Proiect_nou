@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class ReservationService {
@@ -33,70 +32,63 @@ public class ReservationService {
     @Autowired
     private PriceRepository priceRepository;
 
-    @Autowired
-    private ReservationMapper reservationMapper;
+    private ReservationMapper reservationMapper = new ReservationMapper();
 
     public List<Reservation> getAllReservations(){
         return reservationRepository.findAll();
     }
 
     public Reservation addReservation(ReservationDTO reservationDTO) throws ReservationAlreadyExists, InvalidDateException, TennisCourtDoesNotExistsException, UserDoesNotExistException {
-        Reservation reservation = reservationMapper.reservatonMapper(reservationDTO);
+        User user = userRepository.findById(reservationDTO.getUserId())
+                .orElseThrow(()-> new UserDoesNotExistException("User not found"));
+
+        TennisCourt tennisCourt = tennisCourtRepository.findById(reservationDTO.getTennisCourtId())
+                .orElseThrow(()-> new TennisCourtDoesNotExistsException("TennisCourt not found"));
+
+        Reservation reservation = reservationMapper.mapToReservation(reservationDTO, user, tennisCourt);
 
         ReservationValidator validator = new ReservationValidator(reservation);
         validator.validate();
 
         if (isValidReservation((reservation))) {
             return reservationRepository.save(reservation);
-        }
-        else{
+        } else {
             throw new ReservationAlreadyExists("Reservation intersects another one");
         }
     }
 
-
     private boolean isValidReservation(Reservation reservation){
-        if(reservation == null) {
+        if (reservation == null) {
             return false;
         }
 
         LocalDateTime startTime = reservation.getStartTime();
         LocalDateTime endTime = reservation.getEndTime();
 
-        if(startTime == null || endTime == null) {
+        if (startTime == null || endTime == null) {
             return false;
         }
 
         return startTime.isBefore(endTime);
     }
 
-    public Reservation parse(ReservationDTO reservationDTO) {
-        Reservation reservation = new Reservation();
-        int userId = reservationDTO.getUserId();
-        Optional<User> user = userRepository.findById(userId);
-        reservation.setUser(user.get());
-
-        reservation.setStartTime(reservationDTO.getStartTime());
-        reservation.setEndTime(reservationDTO.getEndTime());
-
-        int tennisCourtId = reservationDTO.getTennisCourtId();
-        Optional<TennisCourt> tennisCourt = tennisCourtRepository.findById(tennisCourtId);
-        reservation.setTennisCourt(tennisCourt.get());
-
-        return reservation;
-
-    }
 
     public Reservation update(int reservationId, ReservationDTO newReservationDTO) throws ReservationAlreadyExists, TennisCourtDoesNotExistsException, UserDoesNotExistException {
         Reservation reservation = reservationRepository.findById(reservationId).orElseThrow(()->new ReservationAlreadyExists("Reservation not found"));
 
-        Reservation updatedReservation = reservationMapper.reservatonMapper(newReservationDTO);
+        User user = userRepository.findById(newReservationDTO.getUserId())
+                .orElseThrow(() -> new UserDoesNotExistException("User not found"));
+
+        TennisCourt tennisCourt = tennisCourtRepository.findById(newReservationDTO.getTennisCourtId())
+                .orElseThrow(() -> new TennisCourtDoesNotExistsException("TennisCourt not found"));
+
+        Reservation updatedReservation = reservationMapper.mapToReservation(newReservationDTO, user, tennisCourt);
         reservation.setStartTime(updatedReservation.getStartTime());
         reservation.setEndTime(updatedReservation.getEndTime());
         reservation.setTennisCourt(updatedReservation.getTennisCourt());
         reservation.setUser(updatedReservation.getUser());
 
-        if(reservationRepository.count()==0){
+        if (reservationRepository.count() == 0) {
             reservationRepository.resetAutoIncrementId();
         }
 
@@ -104,19 +96,19 @@ public class ReservationService {
     }
 
     public void delete(int reservationId) throws ReservationDoesNotExistException {
-        if(!reservationRepository.existsById(reservationId))
+        if (!reservationRepository.existsById(reservationId))
             throw new ReservationDoesNotExistException("Reservation not found");
 
         reservationRepository.deleteById(reservationId);
         priceRepository.deleteById(reservationId);
 
-        if(reservationRepository.count() == 0){
+        if (reservationRepository.count() == 0) {
             reservationRepository.resetAutoIncrementId();
         }
     }
 
     public void getAvailableTennisCourtsValidation(LocalDateTime startDate, LocalDateTime endDate) throws InvalidDateException {
-        if(!startDate.toLocalDate().equals(endDate.toLocalDate())){
+        if (!startDate.toLocalDate().equals(endDate.toLocalDate())){
             throw new InvalidDateException("The start date and end date must be within the same day");
         }
 
@@ -133,7 +125,7 @@ public class ReservationService {
         getAvailableTennisCourtsValidation(startDate, endDate);
 
         for (Reservation elem : reservations){
-            if(( elem.getStartTime().equals(startDate) &&  elem.getEndTime().equals(endDate))
+            if (( elem.getStartTime().equals(startDate) &&  elem.getEndTime().equals(endDate))
                     || (elem.getStartTime().isBefore(endDate) && endDate.isBefore(elem.getEndTime()))
                     || (elem.getStartTime().isBefore(startDate) && startDate.isBefore(elem.getEndTime())))
             {
@@ -146,7 +138,7 @@ public class ReservationService {
                 }
             }
         }
-        if(!tennisCourts.isEmpty()){
+        if (!tennisCourts.isEmpty()) {
             return tennisCourts;
         } else {
             throw new TennisCourtDoesNotExistsException("No tennis courts available");

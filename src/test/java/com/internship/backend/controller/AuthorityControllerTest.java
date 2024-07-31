@@ -4,12 +4,14 @@ import com.internship.backend.dto.AuthorityDTO;
 import com.internship.backend.exceptions.UserDoesNotExistException;
 import com.internship.backend.model.Authority;
 import com.internship.backend.service.AuthorityService;
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -20,6 +22,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@ActiveProfiles("test")
 class AuthorityControllerTest {
 
     @InjectMocks
@@ -30,7 +34,6 @@ class AuthorityControllerTest {
 
     private MockMvc mockMvc;
     private Authority authority;
-    private AuthorityDTO authorityDTO;
     private List<Authority> authorities;
 
     @BeforeEach
@@ -38,18 +41,19 @@ class AuthorityControllerTest {
         MockitoAnnotations.openMocks(this);
         mockMvc = MockMvcBuilders.standaloneSetup(authorityController).build();
 
-        authority = Authority.builder()
-                .id(1)
-                .name("ROLE_USER")
-                .build();
-
-        authorityDTO = new AuthorityDTO("ROLE_USER", 1);
-
+        authority = createDefaultAuthority();
         authorities = List.of(authority);
     }
 
+    private Authority createDefaultAuthority() {
+        return Authority.builder()
+                .id(1)
+                .name("ROLE_USER")
+                .build();
+    }
+
     @Test
-    void createAuthority() throws Exception {
+    void shouldCreateAuthority() throws Exception {
         when(authorityService.add(any(AuthorityDTO.class))).thenReturn(authority);
 
         mockMvc.perform(post("/api/authority/addAuthority/1")
@@ -58,11 +62,11 @@ class AuthorityControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name", is(authority.getName())));
 
-        verify(authorityService, times(1)).add(any(AuthorityDTO.class));
+        verify(authorityService).add(any(AuthorityDTO.class));
     }
 
     @Test
-    void createAuthorityThrowsBadRequest() throws Exception {
+    void shouldNotCreateAuthorityForNonExistingUser() throws Exception {
         when(authorityService.add(any(AuthorityDTO.class))).thenThrow(UserDoesNotExistException.class);
 
         mockMvc.perform(post("/api/authority/addAuthority/1")
@@ -70,11 +74,11 @@ class AuthorityControllerTest {
                         .content("{\"name\":\"ROLE_USER\",\"userId\":1}"))
                 .andExpect(status().isBadRequest());
 
-        verify(authorityService, times(1)).add(any(AuthorityDTO.class));
+        verify(authorityService).add(any(AuthorityDTO.class));
     }
 
     @Test
-    void getAllAuthorities() throws Exception {
+    void shouldRetireveAllAuthorities() throws Exception {
         when(authorityService.getAllAuthorities()).thenReturn(authorities);
 
         mockMvc.perform(get("/api/authority/getAllAuthorities")
@@ -83,28 +87,28 @@ class AuthorityControllerTest {
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].name", is(authority.getName())));
 
-        verify(authorityService, times(1)).getAllAuthorities();
+        verify(authorityService).getAllAuthorities();
     }
 
     @Test
-    void deleteAuthority() throws Exception {
+    void shouldDeleteAuthority() throws Exception {
         doNothing().when(authorityService).delete(anyInt());
 
         mockMvc.perform(delete("/api/authority/delete/{id}", 1)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
-        verify(authorityService, times(1)).delete(anyInt());
+        verify(authorityService).delete(anyInt());
     }
 
     @Test
-    void deleteAuthorityThrowsNotFound() throws Exception {
-        doThrow(RuntimeException.class).when(authorityService).delete(anyInt());
+    void shouldNotDeleteAuthorityForNonExisitingUser() throws Exception {
+        doThrow(EntityNotFoundException.class).when(authorityService).delete(anyInt());
 
         mockMvc.perform(delete("/api/authority/delete/{id}", 1)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
 
-        verify(authorityService, times(1)).delete(anyInt());
+        verify(authorityService).delete(anyInt());
     }
 }

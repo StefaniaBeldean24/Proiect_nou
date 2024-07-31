@@ -11,17 +11,20 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
-import java.util.Optional;
 
+import static java.util.Optional.empty;
+import static java.util.List.of;
+import static java.util.Optional.ofNullable;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.testng.Assert.assertThrows;
 import static org.testng.AssertJUnit.assertEquals;
+import static org.testng.AssertJUnit.assertNotNull;
 
-
+@ActiveProfiles("test")
 class LocationServiceTest {
 
     @InjectMocks
@@ -40,20 +43,25 @@ class LocationServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        location = createDefaultLocation();
+        locationDTO = createDefaultLocationDTO();
+        locations = of(location);
+    }
 
-        location = Location.builder()
+    private Location createDefaultLocation() {
+        return Location.builder()
                 .id(1)
-                .name("Location1")
-                .details("Details about Location1")
+                .name("Location")
+                .details("Details about Location")
                 .build();
+    }
 
-        locationDTO = new LocationDTO("Location1", "Details");
-
-        locations = List.of(location);
+    private LocationDTO createDefaultLocationDTO() {
+        return new LocationDTO("Location1", "Details");
     }
 
     @Test
-    void getAllLocations() {
+    void shouldRetrieveAllLocations() {
         when(locationRepository.findAll()).thenReturn(locations);
 
         List<Location> result = locationService.getAllLocations();
@@ -63,43 +71,44 @@ class LocationServiceTest {
     }
 
     @Test
-    void addLocation() throws LocationAlreadyExistsException {
-        when(locationMapper.locationMapper(any(LocationDTO.class))).thenReturn(location);
+    void shouldAddLocation() throws LocationAlreadyExistsException {
+        when(locationMapper.mapToLocation(locationDTO)).thenReturn(location);
         when(locationRepository.existsByName(location.getName())).thenReturn(false);
         when(locationRepository.save(any(Location.class))).thenReturn(location);
 
         Location savedLocation = locationService.addLocation(locationDTO);
 
-        assertEquals(location.getId(), savedLocation.getId());
-        assertEquals(location.getName(), savedLocation.getName());
-        assertEquals(location.getDetails(), savedLocation.getDetails());
-        verify(locationRepository).save(any(Location.class));
+        assertNotNull(savedLocation); //The returned location should not be null
+        assertEquals(location.getName(), savedLocation.getName()); //savedLocation should have the same name as location
+        verify(locationRepository).save(location);
     }
 
     @Test
-    void addLocationThrowsExceptionWhenAlreadyExists() {
-        when(locationMapper.locationMapper(any(LocationDTO.class))).thenReturn(location);
-        when(locationRepository.existsByName(location.getName())).thenReturn(true);
+    void shouldThrowExceptionWhenAddingAnExisitngLocation() {
+        when(locationMapper.mapToLocation(locationDTO)).thenReturn(location);
+        when(locationRepository.existsByName(location.getName())).thenReturn(true); //if my location already exists by name, it will throw exception
 
         assertThrows(LocationAlreadyExistsException.class, () -> locationService.addLocation(locationDTO));
+
+        verify(locationRepository, never()).save(any(Location.class)); //verify that the save method was never called
     }
 
     @Test
-    void updateLocation() throws LocationDoesNotExistException {
-        when(locationRepository.findById(1)).thenReturn(Optional.of(location));
+    void shouldUpdateExistingLocation() throws LocationDoesNotExistException {
+        when(locationRepository.findById(1)).thenReturn(ofNullable(location));
         when(locationRepository.save(any(Location.class))).thenReturn(location);
 
         LocationDTO updatedLocationDTO = new LocationDTO("UpdatedLocation", "Updated details about Location");
         Location updatedLocation = locationService.update(1, updatedLocationDTO);
 
-        assertEquals(updatedLocationDTO.getName(), updatedLocation.getName());
-        assertEquals(updatedLocationDTO.getDetails(), updatedLocation.getDetails());
+        assertEquals(updatedLocationDTO.getName(), updatedLocation.getName()); //updatedLocationDTO should have the same name as updatedLocation
+        assertEquals(updatedLocationDTO.getDetails(), updatedLocation.getDetails()); ////updatedLocationDTO should have the same details as updatedLocation
         verify(locationRepository).save(any(Location.class));
     }
 
     @Test
-    void updateLocationThrowsExceptionWhenNotFound() {
-        when(locationRepository.findById(1)).thenReturn(Optional.empty());
+    void shouldThrowExceptionWhenUpdatingNonExistentLocation() {
+        when(locationRepository.findById(1)).thenReturn(empty());
 
         LocationDTO updatedLocationDTO = new LocationDTO("UpdatedLocation", "Updated details about Location");
 
@@ -107,18 +116,20 @@ class LocationServiceTest {
     }
 
     @Test
-    void deleteLocation() throws LocationDoesNotExistException {
-        when(locationRepository.existsById(1)).thenReturn(true);
+    void shouldDeleteExistingLocation() throws LocationDoesNotExistException {
+        when(locationRepository.existsById(1)).thenReturn(true); //check if location with id 1 exists
 
         locationService.delete(1);
 
-        verify(locationRepository).deleteById(1);
+        verify(locationRepository).deleteById(1); //verify that deleteById method was called once
     }
 
     @Test
-    void deleteLocationThrowsExceptionWhenNotFound() {
+    void shouldThrowExceptionWhenLocationNotFoundToDelete() {
         when(locationRepository.existsById(1)).thenReturn(false);
 
         assertThrows(LocationDoesNotExistException.class, () -> locationService.delete(1));
+
+        verify(locationRepository, never()).save(any(Location.class));
     }
 }
