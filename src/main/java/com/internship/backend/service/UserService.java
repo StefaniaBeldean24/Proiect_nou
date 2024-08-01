@@ -14,8 +14,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import static java.util.Optional.ofNullable;
 
@@ -49,7 +51,16 @@ public class UserService {
         return savedUser;
     }
 
-    private void registerValidation(User user) throws UserAlreadyExistsException, EmailAlreadyExistsException{
+    public List<User> getAllUsersProcedure() {
+        return userRepository.getAllUsersProcedure();
+    }
+
+    public void deleteUserByIdProcedure(Integer userId) {
+        authorityRepository.deleteByUserId(userId);
+        userRepository.deleteUserByIdProcedure(userId);
+    }
+
+    private void registerValidation(User user) throws UserAlreadyExistsException, EmailAlreadyExistsException {
         Optional<User> findByUsername = ofNullable(userRepository.findByUsername(user.getUsername()));
         Optional<User> findByEmail = ofNullable(userRepository.findByEmail(user.getEmail()));
 
@@ -63,7 +74,7 @@ public class UserService {
     }
 
     public List<User> getAllUsers() {
-       return userRepository.findAll();
+        return userRepository.findAll();
     }
 
     public Optional<User> getUserById(Integer id) {
@@ -93,6 +104,12 @@ public class UserService {
         user.setEmail(email);
     }
 
+    public void resetAutoIncrement() {
+        if (userRepository.count() == 0) {
+            userRepository.resetAutoIncrementId();
+        }
+    }
+
     public void deleteUser(Integer id) throws UserDoesNotExistException {
         if (!userRepository.existsById(id)) {
             throw new UserDoesNotExistException("User does not exisit");
@@ -100,9 +117,7 @@ public class UserService {
 
         userRepository.deleteById(id);
 
-        if(userRepository.count() == 0){
-            userRepository.resetAutoIncrementId();
-        }
+        resetAutoIncrement();
     }
 }
 

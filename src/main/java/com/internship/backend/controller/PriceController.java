@@ -8,13 +8,13 @@ import com.internship.backend.service.PriceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
+
 import static java.util.Optional.ofNullable;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.ResponseEntity.*;
 
 @RestController
@@ -36,9 +36,9 @@ public class PriceController {
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<List<Price>> getAllPrices(){
+    public ResponseEntity<List<Price>> getAllPrices() {
         List<Price> prices = priceService.getAllPrices();
-        if (ofNullable(prices).isPresent()){
+        if (ofNullable(prices).isPresent()) {
             Log.info("Get all prices: ");
             return ok(prices);
         } else {
@@ -47,13 +47,13 @@ public class PriceController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<Price> updatePrice(@PathVariable("id") int priceId, @RequestBody PriceDTO priceDTO){
-        try{
+    public ResponseEntity<Price> updatePrice(@PathVariable("id") int priceId, @RequestBody PriceDTO priceDTO) {
+        try {
             var updatedPrice = ofNullable(priceService.update(priceId, priceDTO));
-            Log.info("Updating "+ priceDTO);
+            Log.info("Updating " + priceDTO);
             return ok(updatedPrice.get());
         } catch (PriceIdDoesNotExistException e) {
-            Log.error("Error processing update "+e.getMessage());
+            Log.error("Error processing update " + e.getMessage());
             return notFound().build();
         } catch (TennisCourtDoesNotExistsException e) {
             return status(BAD_REQUEST).build();
@@ -61,9 +61,9 @@ public class PriceController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Price> deletePrice(@PathVariable("id") int priceId){
+    public ResponseEntity<Price> deletePrice(@PathVariable("id") int priceId) {
         try {
-            Log.info("Deleting price: "+ priceId);
+            Log.info("Deleting price: " + priceId);
             priceService.delete(priceId);
             return ok().build();
         } catch (PriceIdDoesNotExistException e) {

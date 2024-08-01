@@ -15,11 +15,11 @@ import java.util.Objects;
 public class CsrfCookieFilter extends OncePerRequestFilter {
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException{
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         //we read the CSRFToken available inside the HttpServletRequest
         CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
         //we check if there is an header name value inside this object. If it is not null, it means that the framewotk might have generated the csrfToken
-        if(Objects.nonNull(csrfToken.getHeaderName())){
+        if (Objects.nonNull(csrfToken.getHeaderName())) {
             //we are populating the same HeaderName -> it's a token
             response.setHeader(csrfToken.getHeaderName(), csrfToken.getToken());
         }

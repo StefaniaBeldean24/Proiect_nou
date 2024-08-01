@@ -17,8 +17,8 @@ import org.springframework.test.context.ActiveProfiles;
 import java.util.List;
 import java.util.Optional;
 
-import static java.util.Optional.empty;
 import static java.util.List.of;
+import static java.util.Optional.empty;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -43,10 +43,10 @@ class AuthorityServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        authority = createDefaultAuthority();
-        authorityDTO = createDefaultAuthorityDTO();
-        authorities = of(authority);
-        user = new User();
+//        authority = createDefaultAuthority();
+//        authorityDTO = createDefaultAuthorityDTO();
+//        authorities = of(authority);
+//        user = new User();
     }
 
     private Authority createDefaultAuthority() {
@@ -62,6 +62,9 @@ class AuthorityServiceTest {
 
     @Test
     void shouldAddAuthority() throws UserDoesNotExistException {
+        authorityDTO = createDefaultAuthorityDTO();
+        user = new User();
+
         //Define the behaviour of the mock userRepository and authorityRepository
         when(userRepository.findById(1)).thenReturn(Optional.of(user));
 
@@ -76,11 +79,13 @@ class AuthorityServiceTest {
 
     @Test
     void shouldThrowExceptionWhenAddingAnAuthorityForANonExistingUser() {
+        authorityDTO = createDefaultAuthorityDTO();
+
         //this method should throw UserDoesNotExistException when we want to add authority for a user that does not exist
         //mock userRepository.findById to throw exception
         when(userRepository.findById(10)).thenReturn(empty());
 
-        assertThrows(UserDoesNotExistException.class, ()-> {
+        assertThrows(UserDoesNotExistException.class, () -> {
             authorityService.add(authorityDTO);
         });
 
@@ -107,6 +112,8 @@ class AuthorityServiceTest {
 
     @Test
     void shouldRetrieveAllAuthorities() {
+        authority = createDefaultAuthority();
+        authorities = of(authority);
         when(authorityRepository.findAll()).thenReturn(authorities);
 
         List<Authority> result = authorityService.getAllAuthorities();

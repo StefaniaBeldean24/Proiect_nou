@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class ReservationService {
@@ -34,16 +35,16 @@ public class ReservationService {
 
     private ReservationMapper reservationMapper = new ReservationMapper();
 
-    public List<Reservation> getAllReservations(){
+    public List<Reservation> getAllReservations() {
         return reservationRepository.findAll();
     }
 
     public Reservation addReservation(ReservationDTO reservationDTO) throws ReservationAlreadyExists, InvalidDateException, TennisCourtDoesNotExistsException, UserDoesNotExistException {
         User user = userRepository.findById(reservationDTO.getUserId())
-                .orElseThrow(()-> new UserDoesNotExistException("User not found"));
+                .orElseThrow(() -> new UserDoesNotExistException("User not found"));
 
         TennisCourt tennisCourt = tennisCourtRepository.findById(reservationDTO.getTennisCourtId())
-                .orElseThrow(()-> new TennisCourtDoesNotExistsException("TennisCourt not found"));
+                .orElseThrow(() -> new TennisCourtDoesNotExistsException("TennisCourt not found"));
 
         Reservation reservation = reservationMapper.mapToReservation(reservationDTO, user, tennisCourt);
 
@@ -57,15 +58,15 @@ public class ReservationService {
         }
     }
 
-    private boolean isValidReservation(Reservation reservation){
-        if (reservation == null) {
+    private boolean isValidReservation(Reservation reservation) {
+        if (Objects.isNull(reservation)) {
             return false;
         }
 
         LocalDateTime startTime = reservation.getStartTime();
         LocalDateTime endTime = reservation.getEndTime();
 
-        if (startTime == null || endTime == null) {
+        if (Objects.isNull(startTime) || Objects.isNull(endTime)) {
             return false;
         }
 
@@ -111,31 +112,30 @@ public class ReservationService {
         reservationRepository.deleteById(reservationId);
         priceRepository.deleteById(reservationId);
 
-       resetAutoIncrement();
+        resetAutoIncrement();
     }
 
     public void getAvailableTennisCourtsValidation(LocalDateTime startDate, LocalDateTime endDate) throws InvalidDateException {
-        if (!startDate.toLocalDate().equals(endDate.toLocalDate())){
+        if (!startDate.toLocalDate().equals(endDate.toLocalDate())) {
             throw new InvalidDateException("The start date and end date must be within the same day");
         }
 
-        if(endDate.getHour() - startDate.getHour() != 2){
+        if (endDate.getHour() - startDate.getHour() != 2) {
             throw new InvalidDateException("The reservation duration must be exactly 2 hours");
         }
     }
 
-   public List<TennisCourt> getAvailableTennisCourts(LocalDateTime startDate, LocalDateTime endDate) throws TennisCourtDoesNotExistsException, InvalidDateException {
+    public List<TennisCourt> getAvailableTennisCourts(LocalDateTime startDate, LocalDateTime endDate) throws TennisCourtDoesNotExistsException, InvalidDateException {
         int tennisCourtId;
         List<TennisCourt> tennisCourts = tennisCourtRepository.findAll();
         List<Reservation> reservations = reservationRepository.findAll();
 
         getAvailableTennisCourtsValidation(startDate, endDate);
 
-        for (Reservation elem : reservations){
-            if (( elem.getStartTime().equals(startDate) &&  elem.getEndTime().equals(endDate))
+        for (Reservation elem : reservations) {
+            if ((elem.getStartTime().equals(startDate) && elem.getEndTime().equals(endDate))
                     || (elem.getStartTime().isBefore(endDate) && endDate.isBefore(elem.getEndTime()))
-                    || (elem.getStartTime().isBefore(startDate) && startDate.isBefore(elem.getEndTime())))
-            {
+                    || (elem.getStartTime().isBefore(startDate) && startDate.isBefore(elem.getEndTime()))) {
                 tennisCourtId = elem.getTennisCourt().getId();
 
                 for (int i = 0; i < tennisCourts.size(); i++) {

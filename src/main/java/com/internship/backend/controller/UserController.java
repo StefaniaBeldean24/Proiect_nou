@@ -17,9 +17,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 
+import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.ResponseEntity.*;
-import static java.util.Optional.ofNullable;
 
 
 @RestController
@@ -27,10 +27,9 @@ import static java.util.Optional.ofNullable;
 @RequiredArgsConstructor
 public class UserController {
 
+    Logger Log = LoggerFactory.getLogger(UserController.class);
     @Autowired
     private UserService userService;
-
-    Logger Log = LoggerFactory.getLogger(UserController.class);
 
     @PostMapping("/register")
     public ResponseEntity<User> createUser(@RequestBody UserDTO userDTO) {
@@ -40,6 +39,18 @@ public class UserController {
         } catch (UserAlreadyExistsException | EmailAlreadyExistsException e) {
             return status(CONFLICT).build();
         }
+    }
+
+    @GetMapping("/getAllUsersProcedure")
+    public ResponseEntity<List<User>> getAllUsersProcedure() {
+        List<User> users = userService.getAllUsersProcedure();
+        return ok(users);
+    }
+
+    @DeleteMapping("/deleteUserByIdProcedure/{userId}")
+    public ResponseEntity<Void> deleteUserByIdProcedure(@PathVariable Integer userId) {
+        userService.deleteUserByIdProcedure(userId);
+        return noContent().build();
     }
 
     @GetMapping("/getAllUsers")

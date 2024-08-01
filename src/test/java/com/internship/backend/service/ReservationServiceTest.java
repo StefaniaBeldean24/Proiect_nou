@@ -22,8 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static java.util.Optional.empty;
 import static java.util.List.of;
+import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -60,17 +60,6 @@ class ReservationServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-
-        user = createDefaultUser();
-
-        tennisCourt = createDefaultTennisCourt();
-
-        reservation = createDefaultReservation();
-
-        reservationDTO = createDefaultReservationDTO();
-
-        reservations = new ArrayList<>();
-        reservations.add(reservation);
     }
 
     private User createDefaultUser() {
@@ -105,8 +94,10 @@ class ReservationServiceTest {
 
     @Test
     void shouldRetrieveAllReservations() {
-        when(reservationRepository.findAll()).thenReturn(reservations);
+        reservation = createDefaultReservation();
+        reservations = of(reservation);
 
+        when(reservationRepository.findAll()).thenReturn(reservations);
         List<Reservation> result = reservationService.getAllReservations();
 
         assertEquals(1, result.size());
@@ -115,6 +106,11 @@ class ReservationServiceTest {
 
     @Test
     void shouldAddReservation() throws ReservationAlreadyExists, InvalidDateException, TennisCourtDoesNotExistsException, UserDoesNotExistException {
+        user = createDefaultUser();
+        tennisCourt = createDefaultTennisCourt();
+        reservation = createDefaultReservation();
+        reservationDTO = createDefaultReservationDTO();
+
         when(reservationMapper.mapToReservation(reservationDTO, user, tennisCourt)).thenReturn(reservation);
         when(userRepository.findById(reservationDTO.getUserId())).thenReturn(ofNullable(user));
         when(tennisCourtRepository.findById(reservationDTO.getTennisCourtId())).thenReturn(ofNullable(tennisCourt));
@@ -127,14 +123,19 @@ class ReservationServiceTest {
     }
 
     @Test
-    void shouldNotAddReservationWhenUserNotFound()  {
+    void shouldNotAddReservationWhenUserNotFound() {
+        reservationDTO = createDefaultReservationDTO();
+
         when(userRepository.findById(reservationDTO.getUserId())).thenReturn(empty());
 
         assertThrows(UserDoesNotExistException.class, () -> reservationService.addReservation(reservationDTO));
     }
 
     @Test
-    void shouldNotAddReservationWhenTennisCourtNotFound()  {
+    void shouldNotAddReservationWhenTennisCourtNotFound() {
+        user = createDefaultUser();
+        reservationDTO = createDefaultReservationDTO();
+
         when(userRepository.findById(reservationDTO.getUserId())).thenReturn(Optional.of(user));
         when(tennisCourtRepository.findById(reservationDTO.getTennisCourtId())).thenReturn(empty());
 
@@ -143,6 +144,11 @@ class ReservationServiceTest {
 
     @Test
     void shouldUpdateReservation() throws ReservationAlreadyExists, TennisCourtDoesNotExistsException, UserDoesNotExistException {
+        user = createDefaultUser();
+        tennisCourt = createDefaultTennisCourt();
+        reservation = createDefaultReservation();
+        reservationDTO = createDefaultReservationDTO();
+
         when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
         when(reservationMapper.mapToReservation(reservationDTO, user, tennisCourt)).thenReturn(reservation);
         when(userRepository.findById(reservationDTO.getUserId())).thenReturn(ofNullable(user));
@@ -158,8 +164,10 @@ class ReservationServiceTest {
 
     @Test
     void shouldNotUpdateWhenUserNotFound() {
+        reservation = createDefaultReservation();
+        reservationDTO = createDefaultReservationDTO();
         when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
-        when(userRepository.findById(1)).thenReturn(Optional.empty());
+        when(userRepository.findById(1)).thenReturn(empty());
 
         assertThrows(UserDoesNotExistException.class, () -> reservationService.update(1, reservationDTO));
     }
@@ -176,9 +184,10 @@ class ReservationServiceTest {
 
     @Test
     void shouldThrowExceptionWhenDeletingNonExistentReservation() {
+        reservation = createDefaultReservation();
         when(reservationRepository.existsById(1)).thenReturn(false);
 
-        assertThrows(ReservationDoesNotExistException.class, ()-> reservationService.delete(reservation.getId()));
+        assertThrows(ReservationDoesNotExistException.class, () -> reservationService.delete(reservation.getId()));
     }
 
     @Test
@@ -190,6 +199,10 @@ class ReservationServiceTest {
 
     @Test
     void shouldRetrieveAvailableTennisCourts() throws TennisCourtDoesNotExistsException, InvalidDateException {
+        tennisCourt = createDefaultTennisCourt();
+        reservation = createDefaultReservation();
+        reservations = of(reservation);
+
         when(tennisCourtRepository.findAll()).thenReturn(of(tennisCourt));
         when(reservationRepository.findAll()).thenReturn(reservations);
 
@@ -204,6 +217,9 @@ class ReservationServiceTest {
 
     @Test
     void shouldThrowExceptionWhenNoTennisCourtIsAvailable() {
+        reservation = createDefaultReservation();
+        reservations = of(reservation);
+
         when(tennisCourtRepository.findAll()).thenReturn(new ArrayList<>());
         when(reservationRepository.findAll()).thenReturn(reservations);
 

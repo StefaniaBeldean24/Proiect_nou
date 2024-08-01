@@ -18,8 +18,8 @@ import org.springframework.test.context.ActiveProfiles;
 import java.util.List;
 import java.util.Optional;
 
-import static java.util.Optional.empty;
 import static java.util.List.of;
+import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -49,10 +49,6 @@ class PriceServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        price = createDefaultPrice();
-        priceDTO = createDefaultPriceDTO();
-        tennisCourt = createDefaultTennisCourt();
-        prices = of(price);
     }
 
     private Price createDefaultPrice() {
@@ -65,7 +61,7 @@ class PriceServiceTest {
     }
 
     private PriceDTO createDefaultPriceDTO() {
-        return new PriceDTO("Summer","Morning", 100, 1 );
+        return new PriceDTO("Summer", "Morning", 100, 1);
     }
 
     private TennisCourt createDefaultTennisCourt() {
@@ -78,6 +74,8 @@ class PriceServiceTest {
 
     @Test
     void shouldRetrieveAllPrices() {
+        price = createDefaultPrice();
+        prices = of(price);
         when(priceRepository.findAll()).thenReturn(prices);
 
         List<Price> result = priceService.getAllPrices();
@@ -88,6 +86,9 @@ class PriceServiceTest {
 
     @Test
     void shouldAddPrice() throws TennisCourtDoesNotExistsException {
+        price = createDefaultPrice();
+        priceDTO = createDefaultPriceDTO();
+        tennisCourt = createDefaultTennisCourt();
         when(tennisCourtRepository.findById(priceDTO.getTennisCourtId())).thenReturn(ofNullable(tennisCourt));
         when(priceMapper.mapToPrice(eq(priceDTO), any(TennisCourt.class))).thenReturn(price);
         when(priceRepository.save(any(Price.class))).thenReturn(price);
@@ -101,11 +102,13 @@ class PriceServiceTest {
 
     @Test
     void shouldUpdatePrice() throws PriceIdDoesNotExistException, TennisCourtDoesNotExistsException {
+        price = createDefaultPrice();
+        tennisCourt = createDefaultTennisCourt();
         when(priceRepository.findById(1)).thenReturn(Optional.of(price));
         when(priceRepository.save(any(Price.class))).thenReturn(price);
         when(tennisCourtRepository.findById(tennisCourt.getId())).thenReturn(ofNullable(tennisCourt));
 
-        PriceDTO updatedPriceDTO = new PriceDTO("Winter","Evening", 100, 1);
+        PriceDTO updatedPriceDTO = new PriceDTO("Winter", "Evening", 100, 1);
         Price updatedPrice = priceService.update(1, updatedPriceDTO);
 
         assertEquals(updatedPriceDTO.getPrice(), updatedPrice.getPrice());
@@ -118,7 +121,7 @@ class PriceServiceTest {
     void shouldThrowExceptionWhenUpdatingNonExistentPrice() {
         when(priceRepository.findById(1)).thenReturn(empty());
 
-        PriceDTO updatedPriceDTO = new PriceDTO("Summer","Morning", 100, 1);
+        PriceDTO updatedPriceDTO = new PriceDTO("Summer", "Morning", 100, 1);
 
         assertThrows(PriceIdDoesNotExistException.class, () -> priceService.update(1, updatedPriceDTO));
     }
@@ -136,7 +139,7 @@ class PriceServiceTest {
     void shouldThrowExceptionPriceNotFoundToDelete() {
         when(priceRepository.existsById(1)).thenReturn(false);
 
-        assertThrows(RuntimeException.class, () -> priceService.delete(1));
+        assertThrows(PriceIdDoesNotExistException.class, () -> priceService.delete(1));
 
         verify(priceRepository, never()).save(price);
     }

@@ -23,12 +23,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
-import static java.util.Optional.empty;
 import static java.util.List.of;
+import static java.util.Optional.empty;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ActiveProfiles("test")
 class UserServiceTest {
@@ -56,14 +55,6 @@ class UserServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        user = createDefaultUser();
-
-        userDTO = createDefaultUserDTO();
-
-        authority = createDefaultAuthority();
-
-        user.getAuthorities().add(authority);
-        users = of(user);
     }
 
     private User createDefaultUser() {
@@ -90,6 +81,11 @@ class UserServiceTest {
 
     @Test
     void shouldRegisterNewUser() throws EmailAlreadyExistsException, UserAlreadyExistsException {
+        user = createDefaultUser();
+        userDTO = createDefaultUserDTO();
+        authority = createDefaultAuthority();
+        user.getAuthorities().add(authority);
+
         when(userRepository.findByUsername("userDTO")).thenReturn(null);
         when(userRepository.findByEmail("userDTO@yahoo.com")).thenReturn(null);
         when(passwordEncoder.encode("password")).thenReturn("$2a$12$302xzRikiGdJmeistkERbu5r66ulhUPRL5v1lyNGL6kqWHTqRMDY6");
@@ -105,7 +101,35 @@ class UserServiceTest {
     }
 
     @Test
+    void shouldRetrieveAllUsersFromProcedure() {
+        user = createDefaultUser();
+        users = of(user);
+
+        when(userRepository.getAllUsersProcedure()).thenReturn(users);
+        List<User> result = userService.getAllUsersProcedure();
+
+        assertEquals(users, result);
+        verify(userRepository).getAllUsersProcedure();
+    }
+
+    @Test
+    void ShouldDleteUserByIdProcedure() {
+        user = createDefaultUser();
+        Integer userId = 1;
+
+        doNothing().when(authorityRepository).deleteByUserId(userId);
+        doNothing().when(userRepository).deleteUserByIdProcedure(userId);
+
+        userService.deleteUserByIdProcedure(userId);
+
+        verify(authorityRepository).deleteByUserId(userId);
+        verify(userRepository).deleteUserByIdProcedure(userId);
+    }
+
+    @Test
     void shouldNotRegisterWithExistingUsername() {
+        user = createDefaultUser();
+
         when(userRepository.findByUsername("test")).thenReturn(user);
         when(userMapper.mapToUser(userDTO)).thenReturn(user);
 
@@ -114,6 +138,8 @@ class UserServiceTest {
 
     @Test
     void shouldNotRegisterWithExistingEmail() {
+        user = createDefaultUser();
+
         when(userRepository.findByEmail("email@yahoo.com")).thenReturn(user);
         when(userMapper.mapToUser(userDTO)).thenReturn(user);
 
@@ -122,8 +148,10 @@ class UserServiceTest {
 
     @Test
     void shouldRetrieveAllUsers() {
-        when(userRepository.findAll()).thenReturn(users);
+        user = createDefaultUser();
+        users = of(user);
 
+        when(userRepository.findAll()).thenReturn(users);
         List<User> result = userService.getAllUsers();
 
         assertEquals(1, result.size());
@@ -132,8 +160,9 @@ class UserServiceTest {
 
     @Test
     void shouldRetrieveUsersById() {
-        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        user = createDefaultUser();
 
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
         Optional<User> result = userService.getUserById(1);
 
         assertTrue(result.isPresent());
@@ -142,6 +171,8 @@ class UserServiceTest {
 
     @Test
     void shouldUpdateUser() throws IdUserNotFoundException {
+        user = createDefaultUser();
+
         when(userRepository.findById(1)).thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class))).thenReturn(user);
 
@@ -155,8 +186,9 @@ class UserServiceTest {
 
     @Test
     void shouldNotUpdateNonExistingUSer() {
-        when(userRepository.findById(1)).thenReturn(empty());
+        user = createDefaultUser();
 
+        when(userRepository.findById(1)).thenReturn(empty());
         UserDTO userDetailsDTO = new UserDTO("ROLE_USER", "newUser", "newPassword", "newEmail@yahoo.com");
 
         assertThrows(IdUserNotFoundException.class, () -> userService.updateUser(1, userDetailsDTO));

@@ -21,7 +21,7 @@ public class Price {
     private int price;
 
     @ManyToOne
-    @JoinColumn(name="tennis_court_id")
+    @JoinColumn(name = "tennis_court_id")
     @JsonBackReference
     private TennisCourt tennisCourt;
 }

@@ -21,7 +21,8 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ActiveProfiles("test")
 class TennisCourtControllerTest {
@@ -40,10 +41,6 @@ class TennisCourtControllerTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         mockMvc = MockMvcBuilders.standaloneSetup(tennisCourtController).build();
-
-        tennisCourt = createDefaultTennisCourt();
-
-        tennisCourts = List.of(tennisCourt);
     }
 
     private TennisCourt createDefaultTennisCourt() {
@@ -56,6 +53,7 @@ class TennisCourtControllerTest {
 
     @Test
     void shouldAddTennisCourt() throws Exception {
+        tennisCourt = createDefaultTennisCourt();
         when(tennisCourtService.addTennisCourt(any(TennisCourtDTO.class))).thenReturn(tennisCourt);
 
         mockMvc.perform(post("/api/tennisCourts/add")
@@ -82,6 +80,8 @@ class TennisCourtControllerTest {
 
     @Test
     void shouldRetrieveAllTennisCourts() throws Exception {
+        tennisCourt = createDefaultTennisCourt();
+        tennisCourts = List.of(tennisCourt);
         when(tennisCourtService.getAllTennisCourts()).thenReturn(tennisCourts);
 
         mockMvc.perform(get("/api/tennisCourts/getAll")
@@ -95,6 +95,7 @@ class TennisCourtControllerTest {
 
     @Test
     void shouldUpdateTennisCourt() throws Exception {
+        tennisCourt = createDefaultTennisCourt();
         when(tennisCourtService.updateTennisCourt(anyInt(), any(TennisCourtDTO.class))).thenReturn(tennisCourt);
 
         mockMvc.perform(put("/api/tennisCourts/update/{id}", 1)

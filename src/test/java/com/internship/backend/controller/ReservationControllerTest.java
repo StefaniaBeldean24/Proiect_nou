@@ -1,8 +1,9 @@
 package com.internship.backend.controller;
 
 import com.internship.backend.dto.ReservationDTO;
-import com.internship.backend.exceptions.*;
-import com.internship.backend.mappper.ReservationMapper;
+import com.internship.backend.exceptions.ReservationAlreadyExists;
+import com.internship.backend.exceptions.ReservationDoesNotExistException;
+import com.internship.backend.exceptions.TennisCourtDoesNotExistsException;
 import com.internship.backend.model.Reservation;
 import com.internship.backend.model.TennisCourt;
 import com.internship.backend.service.ReservationService;
@@ -24,7 +25,8 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ActiveProfiles("test")
 class ReservationControllerTest {
@@ -45,14 +47,6 @@ class ReservationControllerTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         mockMvc = MockMvcBuilders.standaloneSetup(reservationController).build();
-
-        tennisCourt = createDefaultTennisCourt();
-
-        reservation = createDefaultReservation();
-
-        reservationDTO = createDefaultReservationDTO();
-
-        reservations = List.of(reservation);
     }
 
     private TennisCourt createDefaultTennisCourt() {
@@ -78,6 +72,9 @@ class ReservationControllerTest {
 
     @Test
     void shouldAddReservation() throws Exception {
+        reservationDTO = createDefaultReservationDTO();
+        tennisCourt = createDefaultTennisCourt();
+        reservation = createDefaultReservation();
         when(reservationService.addReservation(any(ReservationDTO.class))).thenReturn(reservation);
 
         mockMvc.perform(post("/api/reservations/add")
@@ -92,6 +89,8 @@ class ReservationControllerTest {
 
     @Test
     void shouldNotAddAlreadyExistingReservation() throws Exception {
+        reservationDTO = createDefaultReservationDTO();
+        reservation = createDefaultReservation();
         when(reservationService.addReservation(any(ReservationDTO.class))).thenThrow(ReservationAlreadyExists.class);
 
         mockMvc.perform(post("/api/reservations/add")
@@ -104,6 +103,9 @@ class ReservationControllerTest {
 
     @Test
     void shouldRetrieveAllReservations() throws Exception {
+        tennisCourt = createDefaultTennisCourt();
+        reservation = createDefaultReservation();
+        reservations = List.of(reservation);
         when(reservationService.getAllReservations()).thenReturn(reservations);
 
         mockMvc.perform(get("/api/reservations/getAll")
@@ -118,6 +120,10 @@ class ReservationControllerTest {
 
     @Test
     void shouldRetrieveAvailableTennisCourts() throws Exception {
+        reservationDTO = createDefaultReservationDTO();
+        tennisCourt = createDefaultTennisCourt();
+        reservation = createDefaultReservation();
+        reservations = List.of(reservation);
         List<TennisCourt> tennisCourts = List.of(tennisCourt);
         when(reservationService.getAvailableTennisCourts(any(LocalDateTime.class), any(LocalDateTime.class))).thenReturn(tennisCourts);
 
@@ -134,6 +140,7 @@ class ReservationControllerTest {
 
     @Test
     void shouldThrowErrorWhenTennisCourtNotFound() throws Exception {
+        reservationDTO = createDefaultReservationDTO();
         when(reservationService.getAvailableTennisCourts(any(LocalDateTime.class), any(LocalDateTime.class))).thenThrow(TennisCourtDoesNotExistsException.class);
 
         mockMvc.perform(post("/api/reservations/available")
@@ -146,6 +153,10 @@ class ReservationControllerTest {
 
     @Test
     void shouldUpdateReservation() throws Exception {
+        tennisCourt = createDefaultTennisCourt();
+        reservation = createDefaultReservation();
+        reservationDTO = createDefaultReservationDTO();
+
         when(reservationService.update(anyInt(), any(ReservationDTO.class))).thenReturn(reservation);
 
         mockMvc.perform(put("/api/reservations/update/{id}", 1)
@@ -160,6 +171,7 @@ class ReservationControllerTest {
 
     @Test
     void shouldNotProcessUpdatingOperation() throws Exception {
+        reservationDTO = createDefaultReservationDTO();
         when(reservationService.update(anyInt(), any(ReservationDTO.class))).thenThrow(ReservationAlreadyExists.class);
 
         mockMvc.perform(put("/api/reservations/update/{id}", 1)

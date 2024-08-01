@@ -14,7 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ActiveProfiles("test")
 class UserTest {
@@ -29,17 +30,22 @@ class UserTest {
     void setUp() {
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         validator = factory.getValidator();
-
         reservations = new ArrayList<>();
+        validUser = createDefaultValidUser();
+        invalidUser = createDefaultInvalidUser();
+    }
 
-        validUser = User.builder()
+    private User createDefaultValidUser() {
+        return User.builder()
                 .id(1)
                 .username("user1")
                 .password("password1")
                 .email("user1@email.com")
                 .build();
+    }
 
-        invalidUser = User.builder()
+    private User createDefaultInvalidUser() {
+        return User.builder()
                 .id(2)
                 .username("us")
                 .password("p")
@@ -56,7 +62,7 @@ class UserTest {
     }
 
     @Test
-    void testUserValidatons(){
+    void testUserValidatons() {
         Set<ConstraintViolation<User>> violations = validator.validate(validUser);
         assertTrue(violations.isEmpty());
     }
@@ -107,8 +113,8 @@ class UserTest {
     void invalidUsernameValidaton() {
         Set<ConstraintViolation<User>> violations = validator.validate(invalidUser);
         boolean usernameErrorFound = false;
-        for(ConstraintViolation<User> violation : violations){
-            if("username must be between 4 and 10 characters".equals(violation.getMessage())){
+        for (ConstraintViolation<User> violation : violations) {
+            if ("username must be between 4 and 10 characters".equals(violation.getMessage())) {
                 usernameErrorFound = true;
                 break;
             }
@@ -125,13 +131,13 @@ class UserTest {
     void invalidPasswordValidaton() {
         Set<ConstraintViolation<User>> violations = validator.validate(invalidUser);
         boolean passwordErrorFound = false;
-        for(ConstraintViolation<User> violation : violations){
-            if("password must be between 8 and 30 characters".equals(violation.getMessage())){
+        for (ConstraintViolation<User> violation : violations) {
+            if ("password must be between 8 and 30 characters".equals(violation.getMessage())) {
                 passwordErrorFound = true;
                 break;
             }
         }
-       assertTrue(passwordErrorFound);
+        assertTrue(passwordErrorFound);
     }
 
     @Test
@@ -143,13 +149,13 @@ class UserTest {
     void invalidEmailValidaton() {
         Set<ConstraintViolation<User>> violations = validator.validate(invalidUser);
         boolean emailErrorFound = false;
-        for(ConstraintViolation<User> violation : violations){
-            if("email must be between 6 and 30 characters".equals(violation.getMessage())){
+        for (ConstraintViolation<User> violation : violations) {
+            if ("email must be between 6 and 30 characters".equals(violation.getMessage())) {
                 emailErrorFound = true;
                 break;
             }
         }
-       assertTrue(emailErrorFound);
+        assertTrue(emailErrorFound);
     }
 
     @Test

@@ -1,4 +1,5 @@
 package com.internship.backend.controller;
+
 import com.internship.backend.dto.LocationDTO;
 import com.internship.backend.exceptions.LocationAlreadyExistsException;
 import com.internship.backend.exceptions.LocationDoesNotExistException;
@@ -21,7 +22,8 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ActiveProfiles("test")
 class LocationControllerTest {
@@ -40,18 +42,19 @@ class LocationControllerTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         mockMvc = MockMvcBuilders.standaloneSetup(locationController).build();
+    }
 
-        location = Location.builder()
+    private Location createDefaultLocation() {
+        return Location.builder()
                 .id(1)
                 .name("Location")
                 .details("Details")
                 .build();
-
-        locations = List.of(location);
     }
 
     @Test
     void shouldAddLocation() throws Exception {
+        location = createDefaultLocation();
         when(locationService.addLocation(any(LocationDTO.class))).thenReturn(location);
 
         mockMvc.perform(post("/api/locations/add")
@@ -78,6 +81,8 @@ class LocationControllerTest {
 
     @Test
     void shouldRetrieveLocations() throws Exception {
+        location = createDefaultLocation();
+        locations = List.of(location);
         when(locationService.getAllLocations()).thenReturn(locations);
 
         mockMvc.perform(get("/api/locations/getAll")
@@ -92,6 +97,7 @@ class LocationControllerTest {
 
     @Test
     void shouldUpdateLocation() throws Exception {
+        location = createDefaultLocation();
         when(locationService.update(anyInt(), any(LocationDTO.class))).thenReturn(location);
 
         mockMvc.perform(put("/api/locations/update/{id}", 1)

@@ -19,7 +19,7 @@ public class ReservationValidator {
     public void validate() throws InvalidDateException {
         LocalDateTime now = LocalDateTime.now();
 
-        if (reservation.getStartTime().isBefore(now) ||  reservation.getStartTime().isAfter(now.plusHours(24))) {
+        if (reservation.getStartTime().isBefore(now) || reservation.getStartTime().isAfter(now.plusHours(24))) {
             throw new InvalidDateException(INVALID_DATE_ERROR);
         }
 

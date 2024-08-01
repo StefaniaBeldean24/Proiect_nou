@@ -8,7 +8,7 @@ import org.springframework.test.context.ActiveProfiles;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ActiveProfiles("test")
 class AuthorityTest {
@@ -19,12 +19,19 @@ class AuthorityTest {
 
     @BeforeEach
     void setUp() {
-        authorityAdmin = Authority.builder()
+        authorityAdmin = createDefaultAuthorityAdmin();
+        authorityClient = createDefaultAuthorityClient();
+    }
+
+    public Authority createDefaultAuthorityAdmin() {
+        return Authority.builder()
                 .id(1)
                 .name("ROLE_ADMIN")
                 .build();
+    }
 
-        authorityClient = Authority.builder()
+    public Authority createDefaultAuthorityClient() {
+        return Authority.builder()
                 .id(2)
                 .name("ROLE_CLIENT")
                 .build();
@@ -82,13 +89,6 @@ class AuthorityTest {
 
     @Test
     void setUser() {
-        User user1 = User.builder()
-                .id(1)
-                .username("user1")
-                .password("password1")
-                .email("email1@yahoo.com")
-                .authorities(Set.of(authorityAdmin))
-                .build();
 
         User user2 = User.builder()
                 .id(2)

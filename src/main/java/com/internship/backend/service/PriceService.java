@@ -8,7 +8,6 @@ import com.internship.backend.model.Price;
 import com.internship.backend.model.TennisCourt;
 import com.internship.backend.repository.PriceRepository;
 import com.internship.backend.repository.TennisCourtRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -25,7 +24,7 @@ public class PriceService {
 
     private PriceMapper priceMapper = new PriceMapper();
 
-    public List<Price> getAllPrices(){
+    public List<Price> getAllPrices() {
         return priceRepository.findAll();
     }
 
@@ -71,6 +70,6 @@ public class PriceService {
         }
 
         priceRepository.deleteById(priceId);
-       resetAutoIncrement();
+        resetAutoIncrement();
     }
 }

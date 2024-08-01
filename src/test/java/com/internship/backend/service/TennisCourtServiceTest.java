@@ -20,8 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static java.util.Optional.empty;
 import static java.util.List.of;
+import static java.util.Optional.empty;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -49,13 +49,10 @@ class TennisCourtServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        location = createDefaultLocation();
-
-        tennisCourt = createDefaultTennisCourt();
-
-        tennisCourtDTO = createDefaultTennisCourtDTO();
-
-        tennisCourts = of(tennisCourt);
+//        location = createDefaultLocation();
+//        tennisCourt = createDefaultTennisCourt();
+//        tennisCourtDTO = createDefaultTennisCourtDTO();
+//        tennisCourts = of(tennisCourt);
     }
 
     private Location createDefaultLocation() {
@@ -81,8 +78,10 @@ class TennisCourtServiceTest {
 
     @Test
     void shouldRetrieveAllTennisCourts() {
-        when(tennisCourtRepository.findAll()).thenReturn(tennisCourts);
+        tennisCourt = createDefaultTennisCourt();
+        tennisCourts = of(tennisCourt);
 
+        when(tennisCourtRepository.findAll()).thenReturn(tennisCourts);
         List<TennisCourt> result = tennisCourtService.getAllTennisCourts();
 
         assertEquals(1, result.size());
@@ -91,6 +90,10 @@ class TennisCourtServiceTest {
 
     @Test
     void addTennisCourt() throws TennisCourtAlreadyExistsException, LocationDoesNotExistException {
+        location = createDefaultLocation();
+        tennisCourt = createDefaultTennisCourt();
+        tennisCourtDTO = createDefaultTennisCourtDTO();
+
         when(tennisCourtMapper.mapToTennisCourt(tennisCourtDTO, location)).thenReturn(tennisCourt);
         when(locationRepository.findAll()).thenReturn((of(location)));
         when(locationRepository.findById(tennisCourtDTO.getLocationId())).thenReturn(Optional.of(location));
@@ -105,6 +108,9 @@ class TennisCourtServiceTest {
 
     @Test
     void shouldThrowExceptionWhenAddingTennisCourtToNonExistingLocation() {
+        location = createDefaultLocation();
+        tennisCourtDTO = createDefaultTennisCourtDTO();
+
         when(locationRepository.findById(tennisCourtDTO.getLocationId())).thenReturn(empty());
 
         assertThrows(LocationDoesNotExistException.class, () -> tennisCourtService.addTennisCourt(tennisCourtDTO));
@@ -114,6 +120,9 @@ class TennisCourtServiceTest {
 
     @Test
     void updateTennisCourt() throws TennisCourtDoesNotExistsException {
+        location = createDefaultLocation();
+        tennisCourt = createDefaultTennisCourt();
+
         when(tennisCourtRepository.findById(1)).thenReturn(Optional.of(tennisCourt));
         when(tennisCourtRepository.save(any(TennisCourt.class))).thenReturn(tennisCourt);
 
@@ -126,6 +135,9 @@ class TennisCourtServiceTest {
 
     @Test
     void updateTennisCourtThrowsExceptionWhenNotFound() {
+        location = createDefaultLocation();
+        tennisCourtDTO = createDefaultTennisCourtDTO();
+
         when(tennisCourtRepository.findById(1)).thenReturn(empty());
 
         TennisCourtDTO newTennisCourtDTO = new TennisCourtDTO("UpdatedCourt", "UpdatedDetails", location.getId());

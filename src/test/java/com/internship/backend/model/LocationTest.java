@@ -7,7 +7,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ActiveProfiles("test")
 class LocationTest {
@@ -17,13 +17,20 @@ class LocationTest {
 
     @BeforeEach
     void setUp() {
-        tennisCourt = tennisCourt.builder()
+        tennisCourt = createDefaultTennisCourt();
+        location = createDefaultLocation();
+    }
+
+    public TennisCourt createDefaultTennisCourt() {
+        return TennisCourt.builder()
                 .id(1)
                 .name("tennisCourt")
                 .details("details")
                 .build();
+    }
 
-        location = Location.builder()
+    public Location createDefaultLocation() {
+        return Location.builder()
                 .id(1)
                 .name("location")
                 .details("details")
@@ -39,7 +46,7 @@ class LocationTest {
 
     @Test
     void testToString() {
-        String expectedString = "Location{id=1, name='location', details='details', tennisCourt=["+tennisCourt+"]}";
+        String expectedString = "Location{id=1, name='location', details='details', tennisCourt=[" + tennisCourt + "]}";
         assertEquals(expectedString, location.toString());
     }
 

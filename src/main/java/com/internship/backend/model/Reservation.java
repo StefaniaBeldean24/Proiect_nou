@@ -31,7 +31,7 @@ public class Reservation {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
-    
+
     @ManyToOne
     @JoinColumn(name = "tennis_court_id")
     private TennisCourt tennisCourt;

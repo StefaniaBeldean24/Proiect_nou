@@ -4,7 +4,6 @@ import com.internship.backend.dto.AuthorityDTO;
 import com.internship.backend.exceptions.UserDoesNotExistException;
 import com.internship.backend.model.Authority;
 import com.internship.backend.service.AuthorityService;
-
 import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,19 +13,18 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import static java.util.Optional.ofNullable;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.ResponseEntity.*;
-import static java.util.Optional.ofNullable;
 
 
 @RestController
 @RequestMapping("/api/authority")
 public class AuthorityController {
 
+    Logger Log = LoggerFactory.getLogger(AuthorityController.class);
     @Autowired
     private AuthorityService authorityService;
-
-    Logger Log = LoggerFactory.getLogger(AuthorityController.class);
 
     @PostMapping("/addAuthority/{userId}")
     public ResponseEntity<Authority> createAuthority(@RequestBody AuthorityDTO authorityDTO) {

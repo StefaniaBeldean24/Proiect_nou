@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-import static org.springframework.http.HttpStatus.CONFLICT;
 import static java.util.Optional.ofNullable;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.ResponseEntity.*;
 
 @RestController
@@ -28,7 +28,7 @@ public class TennisCourtController {
     private TennisCourtService tennisCourtService;
 
     @PostMapping("/add")
-    public ResponseEntity<TennisCourt> addTennisCourt(@RequestBody TennisCourtDTO tennisCourtDTO){
+    public ResponseEntity<TennisCourt> addTennisCourt(@RequestBody TennisCourtDTO tennisCourtDTO) {
         try {
             Log.info("Added tennis court");
             return ok(tennisCourtService.addTennisCourt(tennisCourtDTO));
@@ -53,7 +53,7 @@ public class TennisCourtController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<TennisCourt> updateTennisCourt(@PathVariable("id") int tennisCourtId, @RequestBody TennisCourtDTO tennisCourtDTO){
+    public ResponseEntity<TennisCourt> updateTennisCourt(@PathVariable("id") int tennisCourtId, @RequestBody TennisCourtDTO tennisCourtDTO) {
         try {
             var updatedTennisCourt = ofNullable(tennisCourtService.updateTennisCourt(tennisCourtId, tennisCourtDTO));
             Log.info("Updating tennisCourt");
@@ -65,13 +65,13 @@ public class TennisCourtController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<TennisCourt> deleteTennisCourt(@PathVariable("id") int tennisCourtId){
+    public ResponseEntity<TennisCourt> deleteTennisCourt(@PathVariable("id") int tennisCourtId) {
         try {
             Log.info("Deleting tennisCourt: " + tennisCourtId);
             tennisCourtService.deleteTennisCourt(tennisCourtId);
             return ok().build();
         } catch (TennisCourtDoesNotExistsException e) {
-            Log.error("Error processing delete "+ e.getMessage());
+            Log.error("Error processing delete " + e.getMessage());
             return notFound().build();
         }
     }

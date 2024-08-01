@@ -17,12 +17,14 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
 
+import static com.google.common.collect.ImmutableList.of;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ActiveProfiles("test")
 class PriceControllerTest {
@@ -40,10 +42,6 @@ class PriceControllerTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         mockMvc = MockMvcBuilders.standaloneSetup(priceController).build();
-
-        price = createDefaultPrice();
-
-        prices = List.of(price);
     }
 
     private Price createDefaultPrice() {
@@ -57,6 +55,7 @@ class PriceControllerTest {
 
     @Test
     void shouldAddPrice() throws Exception {
+        price = createDefaultPrice();
         when(priceService.addPrice(any(PriceDTO.class))).thenReturn(price);
 
         mockMvc.perform(post("/api/prices/add")
@@ -84,6 +83,8 @@ class PriceControllerTest {
 
     @Test
     void shouldRetrieveAllPrices() throws Exception {
+        price = createDefaultPrice();
+        prices = of(price);
         when(priceService.getAllPrices()).thenReturn(prices);
 
         mockMvc.perform(get("/api/prices/getAll")
@@ -99,6 +100,7 @@ class PriceControllerTest {
 
     @Test
     void shouldUpdatePrice() throws Exception {
+        price = createDefaultPrice();
         when(priceService.update(anyInt(), any(PriceDTO.class))).thenReturn(price);
 
         mockMvc.perform(put("/api/prices/update/{id}", 1)

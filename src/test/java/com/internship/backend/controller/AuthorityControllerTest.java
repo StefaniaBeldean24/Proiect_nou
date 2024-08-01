@@ -17,11 +17,13 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ActiveProfiles("test")
 class AuthorityControllerTest {
@@ -40,9 +42,6 @@ class AuthorityControllerTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         mockMvc = MockMvcBuilders.standaloneSetup(authorityController).build();
-
-        authority = createDefaultAuthority();
-        authorities = List.of(authority);
     }
 
     private Authority createDefaultAuthority() {
@@ -54,6 +53,7 @@ class AuthorityControllerTest {
 
     @Test
     void shouldCreateAuthority() throws Exception {
+        authority = createDefaultAuthority();
         when(authorityService.add(any(AuthorityDTO.class))).thenReturn(authority);
 
         mockMvc.perform(post("/api/authority/addAuthority/1")
@@ -79,6 +79,8 @@ class AuthorityControllerTest {
 
     @Test
     void shouldRetireveAllAuthorities() throws Exception {
+        authority = createDefaultAuthority();
+        authorities = List.of(authority);
         when(authorityService.getAllAuthorities()).thenReturn(authorities);
 
         mockMvc.perform(get("/api/authority/getAllAuthorities")

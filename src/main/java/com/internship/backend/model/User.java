@@ -25,23 +25,31 @@ import java.util.Set;
 public class User {
 
 
-    @NotNull(message="id must not be null")
+    @NotNull(message = "id must not be null")
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
     @NotBlank
-    @Size(min=4, max=10, message="username must be between 4 and 10 characters")
+    @Size(min = 4, max = 10, message = "username must be between 4 and 10 characters")
     private String username;
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @NotBlank
-    @Size(min=8, max=255, message = "password must be between 8 and 30 characters")
+    @Size(min = 8, max = 255, message = "password must be between 8 and 30 characters")
     private String password;
 
     @NotBlank
-    @Size(min=6, max=30, message= "email must be between 6 and 30 characters")
+    @Size(min = 6, max = 30, message = "email must be between 6 and 30 characters")
     private String email;
+    @JsonIgnore
+    @JsonManagedReference
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
+    private Set<Authority> authorities;
+    @JsonIgnore
+    @JsonManagedReference
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
+    private List<Reservation> reservations;
 
     @Override
     public boolean equals(Object o) {
@@ -51,16 +59,6 @@ public class User {
         User users = (User) o;
         return id == users.id && username.equals(users.username) && password.equals(users.password) && email.equals(users.email);
     }
-
-    @JsonIgnore
-    @JsonManagedReference
-    @OneToMany(mappedBy="user", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
-    private Set<Authority> authorities;
-
-    @JsonIgnore
-    @JsonManagedReference
-    @OneToMany(mappedBy="user", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
-    private List<Reservation> reservations;
 
     @Override
     public int hashCode() {

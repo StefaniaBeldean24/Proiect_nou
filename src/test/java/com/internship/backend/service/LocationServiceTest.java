@@ -15,8 +15,8 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 
-import static java.util.Optional.empty;
 import static java.util.List.of;
+import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -43,9 +43,9 @@ class LocationServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        location = createDefaultLocation();
-        locationDTO = createDefaultLocationDTO();
-        locations = of(location);
+//        location = createDefaultLocation();
+//        locationDTO = createDefaultLocationDTO();
+//        locations = of(location);
     }
 
     private Location createDefaultLocation() {
@@ -62,6 +62,8 @@ class LocationServiceTest {
 
     @Test
     void shouldRetrieveAllLocations() {
+        location = createDefaultLocation();
+        locations = of(location);
         when(locationRepository.findAll()).thenReturn(locations);
 
         List<Location> result = locationService.getAllLocations();
@@ -72,6 +74,8 @@ class LocationServiceTest {
 
     @Test
     void shouldAddLocation() throws LocationAlreadyExistsException {
+        location = createDefaultLocation();
+        locations = of(location);
         when(locationMapper.mapToLocation(locationDTO)).thenReturn(location);
         when(locationRepository.existsByName(location.getName())).thenReturn(false);
         when(locationRepository.save(any(Location.class))).thenReturn(location);
@@ -85,6 +89,8 @@ class LocationServiceTest {
 
     @Test
     void shouldThrowExceptionWhenAddingAnExisitngLocation() {
+        location = createDefaultLocation();
+        locations = of(location);
         when(locationMapper.mapToLocation(locationDTO)).thenReturn(location);
         when(locationRepository.existsByName(location.getName())).thenReturn(true); //if my location already exists by name, it will throw exception
 
@@ -95,6 +101,7 @@ class LocationServiceTest {
 
     @Test
     void shouldUpdateExistingLocation() throws LocationDoesNotExistException {
+        location = createDefaultLocation();
         when(locationRepository.findById(1)).thenReturn(ofNullable(location));
         when(locationRepository.save(any(Location.class))).thenReturn(location);
 

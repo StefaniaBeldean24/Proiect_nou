@@ -13,9 +13,12 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import static java.util.Optional.ofNullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+import static java.util.Optional.ofNullable;
 
 @Component
 public class UsernamePasswordAuthenticationProvider implements AuthenticationProvider {
@@ -32,26 +35,24 @@ public class UsernamePasswordAuthenticationProvider implements AuthenticationPro
         var username = authentication.getName();
         var password = authentication.getCredentials().toString();
         var optionalUser = ofNullable(userRepository.findByUsername(username));
-        if(optionalUser.isPresent()){
+        if (optionalUser.isPresent()) {
             User user = optionalUser.get();
-            if (passwordEncoder.matches(password, user.getPassword())){
+            if (passwordEncoder.matches(password, user.getPassword())) {
 
                 return new UsernamePasswordAuthenticationToken(username, password, getGrantedAuthorities(user.getAuthorities()));
-            }
-            else{
+            } else {
 
                 throw new BadCredentialsException("Invalid password");
             }
-        }
-        else{
+        } else {
 
             throw new BadCredentialsException("No user register with username: " + username);
         }
     }
 
-    private List<GrantedAuthority> getGrantedAuthorities(Set<Authority> authorities){
+    private List<GrantedAuthority> getGrantedAuthorities(Set<Authority> authorities) {
         List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
-        for (Authority authority : authorities){
+        for (Authority authority : authorities) {
             grantedAuthorities.add(new SimpleGrantedAuthority(authority.getName()));
         }
         return grantedAuthorities;

@@ -1,7 +1,6 @@
 package com.internship.backend.controller;
 
 import com.internship.backend.dto.UserDTO;
-import com.internship.backend.exceptions.EmailAlreadyExistsException;
 import com.internship.backend.exceptions.IdUserNotFoundException;
 import com.internship.backend.exceptions.UserAlreadyExistsException;
 import com.internship.backend.exceptions.UserDoesNotExistException;
@@ -20,11 +19,14 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.List;
 import java.util.Optional;
 
-import static org.hamcrest.Matchers.*;
+import static com.google.common.collect.ImmutableList.of;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ActiveProfiles("test")
 class UserControllerTest {
@@ -43,10 +45,6 @@ class UserControllerTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         mockMvc = MockMvcBuilders.standaloneSetup(userController).build();
-
-        user = createDefaultUser();
-
-        users = List.of(user);
     }
 
     private User createDefaultUser() {
@@ -60,6 +58,7 @@ class UserControllerTest {
 
     @Test
     void shouldCreateUser() throws Exception {
+        user = createDefaultUser();
         when(userService.register(any(UserDTO.class))).thenReturn(user);
 
         mockMvc.perform(post("/api/users/register")
@@ -85,7 +84,36 @@ class UserControllerTest {
     }
 
     @Test
+    void getAllUsersProcedure() throws Exception {
+        user = createDefaultUser();
+        users = of(user);
+        when(userService.getAllUsersProcedure()).thenReturn(users);
+
+        mockMvc.perform(get("/api/users/getAllUsersProcedure")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
+
+        verify(userService).getAllUsersProcedure();
+    }
+
+    @Test
+    void deleteUserByIdProcedure() throws Exception {
+        user = createDefaultUser();
+        Integer userId = 1;
+        doNothing().when(userService).deleteUserByIdProcedure(userId);
+
+        mockMvc.perform(delete("/api/users/deleteUserByIdProcedure/{userId}", userId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNoContent());
+
+        verify(userService).deleteUserByIdProcedure(userId);
+    }
+
+    @Test
     void shouldRetrieveAllUsers() throws Exception {
+        user = createDefaultUser();
+        users = List.of(user);
         when(userService.getAllUsers()).thenReturn(users);
 
         mockMvc.perform(get("/api/users/getAllUsers")
@@ -100,6 +128,7 @@ class UserControllerTest {
 
     @Test
     void shouldRetrieveUsersById() throws Exception {
+        user = createDefaultUser();
         when(userService.getUserById(anyInt())).thenReturn(Optional.of(user));
 
         mockMvc.perform(get("/api/users/{id}", 1)
@@ -113,6 +142,7 @@ class UserControllerTest {
 
     @Test
     void shouldUpdateUser() throws Exception {
+        user = createDefaultUser();
         when(userService.updateUser(anyInt(), any(UserDTO.class))).thenReturn(user);
 
         mockMvc.perform(put("/api/users/update/{id}", 1)

@@ -16,14 +16,11 @@ import java.util.List;
 @Service
 public class AuthorityService {
 
+    AuthorityMapper authorityMapper = new AuthorityMapper();
     @Autowired
     private AuthorityRepository authorityRepository;
-
     @Autowired
     private UserRepository userRepository;
-
-    AuthorityMapper authorityMapper = new AuthorityMapper();
-
 
     public Authority add(AuthorityDTO authorityDTO) throws UserDoesNotExistException {
         User user = userRepository.findById(authorityDTO.getUserId())
@@ -39,7 +36,7 @@ public class AuthorityService {
         }
     }
 
-    public void delete(int authorityId){
+    public void delete(int authorityId) {
         if (!authorityRepository.existsById(authorityId)) {
             throw new EntityNotFoundException("User not found");
         }

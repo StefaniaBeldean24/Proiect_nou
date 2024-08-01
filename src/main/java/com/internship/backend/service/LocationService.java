@@ -6,7 +6,6 @@ import com.internship.backend.exceptions.LocationDoesNotExistException;
 import com.internship.backend.mappper.LocationMapper;
 import com.internship.backend.model.Location;
 import com.internship.backend.repository.LocationRepository;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +19,7 @@ public class LocationService {
 
     private LocationMapper locationMapper = new LocationMapper();
 
-    public List<Location> getAllLocations(){
+    public List<Location> getAllLocations() {
         return locationRepository.findAll();
     }
 

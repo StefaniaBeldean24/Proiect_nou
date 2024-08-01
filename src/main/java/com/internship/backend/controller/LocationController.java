@@ -12,9 +12,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import static org.springframework.http.HttpStatus.CONFLICT;
-import static java.util.Optional.ofNullable;
 
+import static java.util.Optional.ofNullable;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.ResponseEntity.*;
 
 @RestController
@@ -27,7 +27,7 @@ public class LocationController {
     private LocationService locationService;
 
     @PostMapping("/add")
-    public ResponseEntity<Location> addLocation(@RequestBody LocationDTO locationDTO){
+    public ResponseEntity<Location> addLocation(@RequestBody LocationDTO locationDTO) {
         try {
             Log.info("Added location " + locationDTO.getName());
             return ok(locationService.addLocation(locationDTO));
@@ -51,19 +51,19 @@ public class LocationController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<Location> updateLocation(@PathVariable("id") int locationId, @RequestBody LocationDTO locationDTO){
+    public ResponseEntity<Location> updateLocation(@PathVariable("id") int locationId, @RequestBody LocationDTO locationDTO) {
         try {
             var updatedLocation = ofNullable(locationService.update(locationId, locationDTO));
             Log.info("Updating location: ");
             return ok(updatedLocation.get());
         } catch (LocationDoesNotExistException e) {
-            Log.error("Error processing update "+ e.getMessage());
+            Log.error("Error processing update " + e.getMessage());
             return notFound().build();
         }
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Location> deleteLocation(@PathVariable("id") int locationID){
+    public ResponseEntity<Location> deleteLocation(@PathVariable("id") int locationID) {
         try {
             Log.info("Deleting location: ", locationID);
             locationService.delete(locationID);

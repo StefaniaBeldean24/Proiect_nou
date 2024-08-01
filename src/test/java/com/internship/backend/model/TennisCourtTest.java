@@ -7,7 +7,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ActiveProfiles("test")
 class TennisCourtTest {
@@ -18,20 +18,30 @@ class TennisCourtTest {
 
     @BeforeEach
     void setUp() {
-        location = Location.builder()
+        location = createDefaultLocation();
+        price = createDefaultPrice();
+        tennisCourt = createDefaultTennisCourt();
+    }
+
+    private Location createDefaultLocation() {
+        return Location.builder()
                 .id(1)
                 .name("location")
                 .details("details")
                 .build();
+    }
 
-        price = Price.builder()
+    private Price createDefaultPrice() {
+        return Price.builder()
                 .id(1)
                 .season("summer")
                 .periodOfDay("morning")
                 .price(100)
                 .build();
+    }
 
-        tennisCourt = TennisCourt.builder()
+    private TennisCourt createDefaultTennisCourt() {
+        return TennisCourt.builder()
                 .id(1)
                 .name("tennisCourt")
                 .details("details")

@@ -42,15 +42,15 @@ public class SecurityConfig {
                 .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
                 .addFilterBefore(new RequestValidationBeforeFilter(), BasicAuthenticationFilter.class)
                 .authorizeHttpRequests(authorize -> authorize
-                                .requestMatchers("/api/**").permitAll()
-                                .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/api/**").permitAll()
+                        .requestMatchers("/h2-console/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
                 .httpBasic(Customizer.withDefaults())
                 .formLogin(Customizer.withDefaults());
 
-        return (SecurityFilterChain)http.build();
+        return (SecurityFilterChain) http.build();
     }
 
     @Bean
@@ -70,7 +70,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder(){
+    public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 }

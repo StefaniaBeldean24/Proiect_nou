@@ -30,46 +30,45 @@ class UsernamePasswordAuthenticationProviderTest {
     @InjectMocks
     private UsernamePasswordAuthenticationProvider usernamePasswordAuthenticationProvider;
 
+    private static final String USERNAME = "test";
+    private static final String ENCODED_PASSWORD = "$2a$12$ww5wq5geTUUcKtzl.snWF.rOc62Fg./3/4HLkNJ8OjWeEu7cMpo3C";
+    private static final String PASSWORD = "password";
+
     @BeforeEach
-    void setUp(){
+    void setUp() {
         MockitoAnnotations.openMocks(this);
     }
 
-    private void setUpUser(String username, String encodedPassword, boolean passwordMatches){
+    private void createUser(String username, String encodedPassword, boolean passwordMatches) {
         User user = new User();
         user.setUsername(username);
         user.setPassword(encodedPassword);
         user.setAuthorities(Set.of(new Authority("ROLE_ADMIN")));
 
         when(userRepository.findByUsername(username)).thenReturn(user);
-        when(passwordEncoder.matches("password", encodedPassword)).thenReturn(passwordMatches);
+        when(passwordEncoder.matches(PASSWORD, encodedPassword)).thenReturn(passwordMatches);
     }
 
     @Test
-    void authenticate_ValidCredentials() {
-        String username = "test";
-        String encodedPassword = "$2a$12$ww5wq5geTUUcKtzl.snWF.rOc62Fg./3/4HLkNJ8OjWeEu7cMpo3C";
+    void shouldAuthenticateUserWithValidCredentials() {
+        createUser(USERNAME, ENCODED_PASSWORD, true);
 
-       setUpUser(username, encodedPassword, true);
-
-
-        Authentication authentication = new UsernamePasswordAuthenticationToken(username, "password");
+        Authentication authentication = new UsernamePasswordAuthenticationToken(USERNAME, PASSWORD);
         Authentication result = usernamePasswordAuthenticationProvider.authenticate(authentication);
 
         assertNotNull(result);
-        assertEquals(username, result.getName());
-        assertEquals("password", result.getCredentials());
+        assertEquals(USERNAME, result.getName());
+        assertEquals(PASSWORD, result.getCredentials());
         assertTrue(result.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN")));
     }
 
     @Test
-    void authenticate_InvalidPassword() {
-        String username = "test";
-        String encodedPassword = "$2a$12$ww5wq5geTUUcKtzl.snWF.rOc62Fg./3/4HLkNJ8OjWeEu7cMpo3Caaa";
+    void shouldNotAuthenticateWithInvalidPassword() {
+        String encodedPassword = ENCODED_PASSWORD + "aaa";
 
-        setUpUser(username, encodedPassword, false);
+        createUser(USERNAME, encodedPassword, false);
 
-        Authentication authentication = new UsernamePasswordAuthenticationToken(username, "password");
+        Authentication authentication = new UsernamePasswordAuthenticationToken(USERNAME, PASSWORD);
 
         assertThrows(BadCredentialsException.class, () -> usernamePasswordAuthenticationProvider.authenticate(authentication));
     }

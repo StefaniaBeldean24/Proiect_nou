@@ -17,15 +17,13 @@ import java.util.Optional;
 
 @Service
 public class TennisCourtService {
+    TennisCourtMapper tennisCourtMapper = new TennisCourtMapper();
     @Autowired
     private TennisCourtRepository tennisCourtRepository;
-
     @Autowired
     private LocationRepository locationRepository;
 
-    TennisCourtMapper tennisCourtMapper = new TennisCourtMapper();
-
-    public List<TennisCourt> getAllTennisCourts(){
+    public List<TennisCourt> getAllTennisCourts() {
         return tennisCourtRepository.findAll();
     }
 

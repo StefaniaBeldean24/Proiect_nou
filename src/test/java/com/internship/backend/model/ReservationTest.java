@@ -7,7 +7,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ActiveProfiles("test")
 class ReservationTest {
@@ -18,21 +18,30 @@ class ReservationTest {
 
     @BeforeEach
     void setUp() {
+        user = createDefaultUser();
+        tennisCourt = createDefaultTennisCourt();
+        reservation = createDefaultReservation();
+    }
 
-        user = User.builder()
+    private User createDefaultUser() {
+        return User.builder()
                 .id(1)
                 .username("test")
                 .password("password")
                 .email("email@yahoo.com")
                 .build();
+    }
 
-        tennisCourt = tennisCourt.builder()
+    private TennisCourt createDefaultTennisCourt() {
+        return TennisCourt.builder()
                 .id(1)
                 .name("tennisCourt")
                 .details("details")
                 .build();
+    }
 
-        reservation = Reservation.builder()
+    private Reservation createDefaultReservation() {
+        return Reservation.builder()
                 .id(1)
                 .startTime(LocalDateTime.now().plusHours(2))
                 .endTime(LocalDateTime.now().plusHours(4))
