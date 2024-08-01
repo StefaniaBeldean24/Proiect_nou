@@ -58,13 +58,13 @@ public class ReservationController {
     @PostMapping("/available")
     public ResponseEntity<List<TennisCourt>> getAvailableTennisCourts(@RequestBody LocalDateTime startTime, LocalDateTime endTime) {
         try {
-            return ResponseEntity.ok(reservationService.getAvailableTennisCourts(startTime, endTime));
+            return ok(reservationService.getAvailableTennisCourts(startTime, endTime));
         } catch (TennisCourtDoesNotExistsException e) {
             Log.error("No available tennis courts " + e.getMessage());
             return notFound().build();
         } catch (InvalidDateException e) {
             Log.error("Invalid date " + e.getMessage());
-            return notFound().build();
+            return badRequest().build();
         }
     }
 
