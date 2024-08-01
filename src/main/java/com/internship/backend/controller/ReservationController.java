@@ -2,7 +2,6 @@ package com.internship.backend.controller;
 
 import com.internship.backend.dto.ReservationDTO;
 import com.internship.backend.exceptions.*;
-import com.internship.backend.model.DateRangeRequest;
 import com.internship.backend.model.Price;
 import com.internship.backend.model.Reservation;
 import com.internship.backend.model.TennisCourt;
@@ -14,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -56,9 +56,9 @@ public class ReservationController {
     }
 
     @PostMapping("/available")
-    public ResponseEntity<List<TennisCourt>> getAvailableTennisCourts(@RequestBody DateRangeRequest dateRangeRequest) {
+    public ResponseEntity<List<TennisCourt>> getAvailableTennisCourts(@RequestBody LocalDateTime startTime, LocalDateTime endTime) {
         try {
-            return ResponseEntity.ok(reservationService.getAvailableTennisCourts(dateRangeRequest.start(), dateRangeRequest.end()));
+            return ResponseEntity.ok(reservationService.getAvailableTennisCourts(startTime, endTime));
         } catch (TennisCourtDoesNotExistsException e) {
             Log.error("No available tennis courts " + e.getMessage());
             return notFound().build();
