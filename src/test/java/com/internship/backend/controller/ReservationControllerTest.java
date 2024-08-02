@@ -78,8 +78,9 @@ class ReservationControllerTest {
         reservationDTO = createDefaultReservationDTO();
         when(reservationService.addReservation(any(ReservationDTO.class))).thenReturn(reservation);
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
+        //I created objectMapper object in order to handle date and time correctly
+        ObjectMapper objectMapper = new ObjectMapper(); //converts java objects to json and json to java objects
+        objectMapper.registerModule(new JavaTimeModule()); //creates an instance to handle time classes
 
         mockMvc.perform(post("/api/reservations/add")
                         .contentType(MediaType.APPLICATION_JSON)
