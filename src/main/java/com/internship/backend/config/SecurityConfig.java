@@ -34,7 +34,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
                 .cors(corsCustomizer -> corsCustomizer.configurationSource(corsConfigurationSource()))
                 .csrf((csrf) -> csrf.csrfTokenRequestHandler(requestHandler)
-                        .ignoringRequestMatchers("/api/**", "/h2/**", "/v2/api-docs", "/swagger-resources/**", "/swagger-ui/**", "/webjars/**", "/v3/api-docs/**")
+                        .ignoringRequestMatchers("/api/**", "/h2-console/**", "/v2/api-docs", "/swagger-resources/**", "/swagger-ui/**", "/webjars/**", "/v3/api-docs/**")
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
 
                 )
@@ -42,21 +42,15 @@ public class SecurityConfig {
                 .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
                 .addFilterBefore(new RequestValidationBeforeFilter(), BasicAuthenticationFilter.class)
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/h2/**").permitAll()
-                                .requestMatchers("/api/**").permitAll()
-//                        .requestMatchers("/api/users/getAll").hasRole("ADMIN")
-//                        .requestMatchers("/api/users/register").hasRole("ADMIN")
-//                        .requestMatchers("api/reservations/getAll").hasRole("ADMIN")
-//                        .requestMatchers("api/reservations/available").hasRole("ADMIN")
-//                        .requestMatchers("api/users/**").hasRole("ADMIN")
-//                        .requestMatchers("/api/users/**").hasRole("USER")
+                        .requestMatchers("/api/**").permitAll()
+                        .requestMatchers("/h2-console/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
                 .httpBasic(Customizer.withDefaults())
                 .formLogin(Customizer.withDefaults());
 
-        return (SecurityFilterChain)http.build();
+        return (SecurityFilterChain) http.build();
     }
 
     @Bean
@@ -76,7 +70,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder(){
+    public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 }

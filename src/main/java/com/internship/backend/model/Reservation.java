@@ -1,52 +1,39 @@
 package com.internship.backend.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
+
+import java.time.LocalDateTime;
 
 
 @Entity
 @Setter
 @Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Reservation {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
+    @NotNull
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime startTime;
+
+    @NotNull
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime endTime;
 
     @ManyToOne
-    @JoinColumn(name = "users_id")
-    private Users user;
-    
+    @JoinColumn(name = "user_id")
+    private User user;
+
     @ManyToOne
     @JoinColumn(name = "tennis_court_id")
     private TennisCourt tennisCourt;
 
-    @Embedded
-    @AttributeOverrides({
-            @AttributeOverride(name = "minute", column = @Column(name = "start_minute")),
-            @AttributeOverride(name = "hour", column = @Column(name = "start_hour")),
-            @AttributeOverride(name = "day", column = @Column(name = "start_day")),
-            @AttributeOverride(name = "month", column = @Column(name = "start_month")),
-            @AttributeOverride(name = "year", column = @Column(name = "start_year"))
-    })
-    private NewDate startTime;
-
-    @Embedded
-    @AttributeOverrides({
-            @AttributeOverride(name = "minute", column = @Column(name = "end_minute")),
-            @AttributeOverride(name = "hour", column = @Column(name = "end_hour")),
-            @AttributeOverride(name = "day", column = @Column(name = "end_day")),
-            @AttributeOverride(name = "month", column = @Column(name = "end_month")),
-            @AttributeOverride(name = "year", column = @Column(name = "end_year"))
-    })
-    private NewDate endTime;
-
-
-
 }
-
-//endpoint in care user-ul sa vada toate terenurile disponibile dintr-o anumita data
-//

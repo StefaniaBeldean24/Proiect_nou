@@ -1,206 +1,212 @@
 package com.internship.backend.service;
 
+import com.internship.backend.dto.UserDTO;
+import com.internship.backend.exceptions.EmailAlreadyExistsException;
+import com.internship.backend.exceptions.IdUserNotFoundException;
 import com.internship.backend.exceptions.UserAlreadyExistsException;
 import com.internship.backend.exceptions.UserDoesNotExistException;
-import com.internship.backend.model.Users;
+import com.internship.backend.mappper.UserMapper;
+import com.internship.backend.model.Authority;
+import com.internship.backend.model.User;
+import com.internship.backend.repository.AuthorityRepository;
 import com.internship.backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
+import static java.util.List.of;
+import static java.util.Optional.empty;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(SpringExtension.class)
-@SpringBootTest
-public class UserServiceTest {
+@ActiveProfiles("test")
+class UserServiceTest {
+
+    @InjectMocks
+    private UserService userService;
 
     @Mock
     private UserRepository userRepository;
 
-    @Autowired
-    @InjectMocks
-    private UserService userService;
+    @Mock
+    private AuthorityRepository authorityRepository;
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private UserMapper userMapper;
+
+    private User user;
+    private UserDTO userDTO;
+    private Authority authority;
+    private List<User> users;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
     }
 
-    /*@AfterEach
-    void tearDown() {
-        jdbcTemplate.update("DELETE FROM USERS");
-    }*/
+    private User createDefaultUser() {
+        return User.builder()
+                .id(1)
+                .username("test")
+                .password("password")
+                .email("email@yahoo.com")
+                .authorities(new HashSet<>())
+                .reservations(new ArrayList<>())
+                .build();
+    }
 
-    @Test
-    public void testRegisterUser_Success() throws UserAlreadyExistsException {
-        Users user = new Users(0, "testuser", "password", "test@example.com");
+    private UserDTO createDefaultUserDTO() {
+        return new UserDTO("ROLE_ADMIN", "userDTO", "password", "userDTO@yahoo.com");
+    }
 
-        when(userRepository.findByUsername("testuser")).thenReturn(null);
-        when(userRepository.save(any(Users.class))).thenReturn(user);
-
-        Users createdUser = userService.register(user);
-
-        assertNotNull(createdUser);
-        assertEquals("testuser", createdUser.getUsername());
-        assertEquals("password", createdUser.getPassword());
-        assertEquals("test@example.com", createdUser.getEmail());
-        verify(userRepository, times(1)).findByUsername("testuser");
-        verify(userRepository, times(1)).save(user);
+    private Authority createDefaultAuthority() {
+        return Authority.builder()
+                .name("ROLE_ADMIN")
+                .user(user)
+                .build();
     }
 
     @Test
-    public void testRegisterUser_UserAlreadyExists() {
-        //Given
-        Users user = new Users(0, "testuser", "password", "test@example.com");
-        userRepository.save(user);
+    void shouldRegisterNewUser() throws EmailAlreadyExistsException, UserAlreadyExistsException {
+        user = createDefaultUser();
+        userDTO = createDefaultUserDTO();
+        authority = createDefaultAuthority();
+        user.getAuthorities().add(authority);
 
-        //When
-        when(userRepository.findByUsername("testuser")).thenReturn(user);
+        when(userRepository.findByUsername("userDTO")).thenReturn(null);
+        when(userRepository.findByEmail("userDTO@yahoo.com")).thenReturn(null);
+        when(passwordEncoder.encode("password")).thenReturn("$2a$12$302xzRikiGdJmeistkERbu5r66ulhUPRL5v1lyNGL6kqWHTqRMDY6");
+        when(userMapper.mapToUser(userDTO)).thenReturn(user);
+        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(authorityRepository.save(any(Authority.class))).thenReturn(authority);
 
-        // Then
-        Exception exception = assertThrows(UserAlreadyExistsException.class, () -> userService.register(user));
-        assertEquals("Username already exists", exception.getMessage());
-        //verify(userRepository, times(1)).findByUsername("testuser");
-        //verify(userRepository, times(0)).save(any(Users.class));
+        User savedUser = userService.register(userDTO);
+
+        assertEquals("$2a$12$302xzRikiGdJmeistkERbu5r66ulhUPRL5v1lyNGL6kqWHTqRMDY6", savedUser.getPassword());
+        verify(userRepository).save(any(User.class));
+        verify(authorityRepository).save(any(Authority.class));
     }
 
     @Test
-    public void testUpdateUser_Success() throws UserDoesNotExistException {
-        Users existingUser = new Users(1, "existinguser", "password", "existing@example.com");
-        Users updatedUser = new Users(1, "updateduser", "newpassword", "updated@example.com");
+    void shouldRetrieveAllUsersFromProcedure() {
+        user = createDefaultUser();
+        users = of(user);
 
-        userRepository.save(existingUser);
-        userRepository.save(updatedUser);
+        when(userRepository.getAllUsersProcedure()).thenReturn(users);
+        List<User> result = userService.getAllUsersProcedure();
 
-        when(userRepository.findById(1)).thenReturn(Optional.of(existingUser));
-        when(userRepository.save(any(Users.class))).thenReturn(updatedUser);
-
-        Users result = userService.update(1, updatedUser);
-
-        assertNotNull(result);
-        assertEquals("updateduser", result.getUsername());
-        assertEquals("newpassword", result.getPassword());
-        assertEquals("updated@example.com", result.getEmail());
-        //verify(userRepository, times(1)).findById(1);
-        //verify(userRepository, times(1)).save(existingUser);
+        assertEquals(users, result);
+        verify(userRepository).getAllUsersProcedure();
     }
 
     @Test
-    public void testUpdateUser_UserNotFound() {
-        Users updatedUser = new Users(1, "updateduser", "newpassword", "updated@example.com");
-        userRepository.save(updatedUser);
+    void ShouldDleteUserByIdProcedure() {
+        user = createDefaultUser();
+        Integer userId = 1;
 
-        //when(userRepository.findById(1)).thenReturn(Optional.empty());
-        //when(userRepository.findById(1)).thenReturn()
+        doNothing().when(authorityRepository).deleteByUserId(userId);
+        doNothing().when(userRepository).deleteUserByIdProcedure(userId);
 
-        Exception exception = assertThrows(UserDoesNotExistException.class, () -> userService.update(1, updatedUser));
-        assertEquals("User not found", exception.getMessage());
-        verify(userRepository, times(1)).findById(1);
-        verify(userRepository, times(1)).save(any(Users.class));
+        userService.deleteUserByIdProcedure(userId);
+
+        verify(authorityRepository).deleteByUserId(userId);
+        verify(userRepository).deleteUserByIdProcedure(userId);
     }
 
     @Test
-    public void testDeleteUser_Success() throws UserDoesNotExistException {
+    void shouldNotRegisterWithExistingUsername() {
+        user = createDefaultUser();
+
+        when(userRepository.findByUsername("test")).thenReturn(user);
+        when(userMapper.mapToUser(userDTO)).thenReturn(user);
+
+        assertThrows(UserAlreadyExistsException.class, () -> userService.register(userDTO));
+    }
+
+    @Test
+    void shouldNotRegisterWithExistingEmail() {
+        user = createDefaultUser();
+
+        when(userRepository.findByEmail("email@yahoo.com")).thenReturn(user);
+        when(userMapper.mapToUser(userDTO)).thenReturn(user);
+
+        assertThrows(EmailAlreadyExistsException.class, () -> userService.register(userDTO));
+    }
+
+    @Test
+    void shouldRetrieveAllUsers() {
+        user = createDefaultUser();
+        users = of(user);
+
+        when(userRepository.findAll()).thenReturn(users);
+        List<User> result = userService.getAllUsers();
+
+        assertEquals(1, result.size());
+        assertEquals(user, result.get(0));
+    }
+
+    @Test
+    void shouldRetrieveUsersById() {
+        user = createDefaultUser();
+
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        Optional<User> result = userService.getUserById(1);
+
+        assertTrue(result.isPresent());
+        assertEquals(user, result.get());
+    }
+
+    @Test
+    void shouldUpdateUser() throws IdUserNotFoundException {
+        user = createDefaultUser();
+
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenReturn(user);
+
+        UserDTO userDetailsDTO = new UserDTO("ROLE_USER", "newUser", "newPassword", "newEmail@yahoo.com");
+        User updatedUser = userService.updateUser(1, userDetailsDTO);
+
+        assertEquals("newUser", updatedUser.getUsername());
+        assertEquals("newPassword", updatedUser.getPassword());
+        assertEquals("newEmail@yahoo.com", updatedUser.getEmail());
+    }
+
+    @Test
+    void shouldNotUpdateNonExistingUSer() {
+        user = createDefaultUser();
+
+        when(userRepository.findById(1)).thenReturn(empty());
+        UserDTO userDetailsDTO = new UserDTO("ROLE_USER", "newUser", "newPassword", "newEmail@yahoo.com");
+
+        assertThrows(IdUserNotFoundException.class, () -> userService.updateUser(1, userDetailsDTO));
+    }
+
+    @Test
+    void shouldDeleteUser() throws UserDoesNotExistException {
         when(userRepository.existsById(1)).thenReturn(true);
 
-        userService.delete(1);
+        userService.deleteUser(1);
 
-        verify(userRepository, times(1)).existsById(1);
-        verify(userRepository, times(1)).deleteById(1);
+        verify(userRepository).deleteById(1);
     }
 
     @Test
-    public void testDeleteUser_UserNotFound() {
+    void shouldNotDeleteNonExistingUser() {
         when(userRepository.existsById(1)).thenReturn(false);
 
-        Exception exception = assertThrows(RuntimeException.class, () -> userService.delete(1));
-        assertEquals("User does not exist", exception.getMessage());
-        verify(userRepository, times(1)).existsById(1);
-        verify(userRepository, times(0)).deleteById(anyInt());
-    }
-
-    @Test
-    public void testLogin_Success() {
-        Users user = new Users(1, "testuser", "password", "test@example.com");
-
-        when(userRepository.findByUsername("testuser")).thenReturn(user);
-
-        Users result = userService.login("testuser", "password");
-
-        assertNotNull(result);
-        assertEquals("testuser", result.getUsername());
-        assertEquals("password", result.getPassword());
-        assertEquals("test@example.com", result.getEmail());
-        verify(userRepository, times(1)).findByUsername("testuser");
-    }
-
-    @Test
-    public void testLogin_Failure_WrongPassword() {
-        Users user = new Users(1, "testuser", "password", "test@example.com");
-
-        when(userRepository.findByUsername("testuser")).thenReturn(user);
-
-        Users result = userService.login("testuser", "wrongpassword");
-
-        assertNull(result);
-        verify(userRepository, times(1)).findByUsername("testuser");
-    }
-
-    @Test
-    public void testLogin_Failure_UserNotFound() {
-        when(userRepository.findByUsername("testuser")).thenReturn(null);
-
-        Users result = userService.login("testuser", "password");
-
-        assertNull(result);
-        verify(userRepository, times(1)).findByUsername("testuser");
-    }
-
-    @Test
-    public void testGetAllUsers() {
-        List<Users> userList = List.of(
-                new Users(1, "user1", "password1", "user1@example.com"),
-                new Users(2, "user2", "password2", "user2@example.com")
-        );
-
-        when(userRepository.findAll()).thenReturn(userList);
-
-        List<Users> result = userService.getAllUsers();
-
-        assertNotNull(result);
-        assertEquals(2, result.size());
-        assertEquals("user1", result.get(0).getUsername());
-        assertEquals("user2", result.get(1).getUsername());
-        verify(userRepository, times(1)).findAll();
-    }
-
-    @Test
-    public void testRegisterUserWithExistingEmail() {
-        Users existingUser = new Users(1, "existinguser", "password", "test@example.com");
-        Users newUser = new Users(0, "newuser", "newpassword", "test@example.com");
-
-        when(userRepository.findByUsername("newuser")).thenReturn(null);
-        when(userRepository.findByEmail("test@example.com")).thenReturn(existingUser);
-
-        Exception exception = assertThrows(UserAlreadyExistsException.class, () -> userService.register(newUser));
-        assertEquals("Email already exists", exception.getMessage());
-        verify(userRepository, times(1)).findByUsername("newuser");
-        verify(userRepository, times(1)).findByEmail("test@example.com");
-        verify(userRepository, times(0)).save(any(Users.class));
+        assertThrows(UserDoesNotExistException.class, () -> userService.deleteUser(1));
     }
 }

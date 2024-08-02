@@ -14,7 +14,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -31,49 +30,45 @@ class UsernamePasswordAuthenticationProviderTest {
     @InjectMocks
     private UsernamePasswordAuthenticationProvider usernamePasswordAuthenticationProvider;
 
+    private static final String USERNAME = "test";
+    private static final String ENCODED_PASSWORD = "$2a$12$ww5wq5geTUUcKtzl.snWF.rOc62Fg./3/4HLkNJ8OjWeEu7cMpo3C";
+    private static final String PASSWORD = "password";
+
     @BeforeEach
-    void setUp(){
+    void setUp() {
         MockitoAnnotations.openMocks(this);
     }
 
-    @Test
-    void authenticate_ValidCredentials() {
-        String username = "test";
-        String password = "password";
-        String encodedPassword = "$2a$12$ww5wq5geTUUcKtzl.snWF.rOc62Fg./3/4HLkNJ8OjWeEu7cMpo3C";
-
+    private void createUser(String username, String encodedPassword, boolean passwordMatches) {
         User user = new User();
         user.setUsername(username);
-        user.setPassword(password);
+        user.setPassword(encodedPassword);
         user.setAuthorities(Set.of(new Authority("ROLE_ADMIN")));
 
-        when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches(password, encodedPassword)).thenReturn(true);
+        when(userRepository.findByUsername(username)).thenReturn(user);
+        when(passwordEncoder.matches(PASSWORD, encodedPassword)).thenReturn(passwordMatches);
+    }
 
-        Authentication authentication = new UsernamePasswordAuthenticationToken(username, password);
+    @Test
+    void shouldAuthenticateUserWithValidCredentials() {
+        createUser(USERNAME, ENCODED_PASSWORD, true);
+
+        Authentication authentication = new UsernamePasswordAuthenticationToken(USERNAME, PASSWORD);
         Authentication result = usernamePasswordAuthenticationProvider.authenticate(authentication);
 
         assertNotNull(result);
-        assertEquals(username, result.getName());
-        assertEquals(password, result.getCredentials());
+        assertEquals(USERNAME, result.getName());
+        assertEquals(PASSWORD, result.getCredentials());
         assertTrue(result.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN")));
     }
 
     @Test
-    void authenticate_InvalidPassword() {
-        String username = "test";
-        String password = "password";
-        String encodedPassword = "$2a$12$ww5wq5geTUUcKtzl.snWF.rOc62Fg./3/4HLkNJ8OjWeEu7cMpo3Caaa";
+    void shouldNotAuthenticateWithInvalidPassword() {
+        String encodedPassword = ENCODED_PASSWORD + "aaa";
 
-        User user = new User();
-        user.setUsername(username);
-        user.setPassword(password);
-        user.setAuthorities(Set.of(new Authority("ROLE_ADMIN")));
+        createUser(USERNAME, encodedPassword, false);
 
-        when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches(password, encodedPassword)).thenReturn(false);
-
-        Authentication authentication = new UsernamePasswordAuthenticationToken(username, password);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(USERNAME, PASSWORD);
 
         assertThrows(BadCredentialsException.class, () -> usernamePasswordAuthenticationProvider.authenticate(authentication));
     }

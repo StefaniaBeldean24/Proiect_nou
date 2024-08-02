@@ -23,9 +23,9 @@ import java.util.*;
 public class JWTTokenGeneratorFilter extends OncePerRequestFilter {
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException{
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if(Objects.nonNull(authentication)){
+        if (Objects.nonNull(authentication)) {
             SecretKey key = Keys.hmacShaKeyFor(SecurityConstants.JWT_KEY.getBytes(StandardCharsets.UTF_8));
             String jwt = Jwts.builder().setIssuer(SecurityConstants.ISSUER).setSubject(SecurityConstants.SUBJECT)
                     .claim(SecurityConstants.CLAIM_USERNAME, authentication.getName())
@@ -34,26 +34,26 @@ public class JWTTokenGeneratorFilter extends OncePerRequestFilter {
                     .setExpiration(getExpirationDate())
                     .signWith(key)
                     .compact();
-            response.setHeader(SecurityConstants.JWT_HEADER,jwt);
+            response.setHeader(SecurityConstants.JWT_HEADER, jwt);
         }
         filterChain.doFilter(request, response);
     }
 
-    private Date getExpirationDate(){
+    private Date getExpirationDate() {
         LocalDateTime expirationDateTime = LocalDateTime.now().plusMinutes(2);
         Instant expirationInstant = expirationDateTime.atZone(ZoneId.systemDefault()).toInstant();
         return Date.from(expirationInstant);
     }
 
     @Override
-    protected boolean shouldNotFilter(HttpServletRequest request){
+    protected boolean shouldNotFilter(HttpServletRequest request) {
         return !request.getServletPath().equals("/api/users/**");
     }
 
 
-    private String populateAuthorities(Collection<? extends GrantedAuthority> collection){
+    private String populateAuthorities(Collection<? extends GrantedAuthority> collection) {
         Set<String> authoritiesSet = new HashSet<>();
-        for(GrantedAuthority authority : collection){
+        for (GrantedAuthority authority : collection) {
             authoritiesSet.add(authority.getAuthority());
         }
         return String.join(",", authoritiesSet);

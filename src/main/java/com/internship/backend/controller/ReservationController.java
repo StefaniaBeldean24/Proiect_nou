@@ -1,24 +1,25 @@
 package com.internship.backend.controller;
 
 import com.internship.backend.dto.ReservationDTO;
-import com.internship.backend.exceptions.InvalidDateException;
-import com.internship.backend.exceptions.ReservationAlreadyExists;
-import com.internship.backend.exceptions.ReservationDoesNotExistException;
-import com.internship.backend.exceptions.TennisCourtDoesNotExistsException;
-import com.internship.backend.model.*;
+import com.internship.backend.exceptions.*;
+import com.internship.backend.model.Price;
+import com.internship.backend.model.Reservation;
+import com.internship.backend.model.TennisCourt;
 import com.internship.backend.service.ReservationService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static org.springframework.http.ResponseEntity.notFound;
-import static org.springframework.http.ResponseEntity.ok;
+import static java.util.Optional.ofNullable;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.ResponseEntity.*;
 
 
 @RestController
@@ -31,72 +32,63 @@ public class ReservationController {
     private ReservationService reservationService;
 
     @PostMapping("/add")
-    public ResponseEntity<Reservation> addReservation(@RequestBody ReservationDTO reservationDTO) {
-        try{
-            Reservation reservation = reservationService.fromDTO(reservationDTO);
-            reservationService.addReservation(reservation);
-            return ok(reservation);
-        }catch(ReservationAlreadyExists e){
+    public ResponseEntity<Reservation> addReservation(@Valid @RequestBody ReservationDTO reservationDTO) {
+        try {
+            return ok(reservationService.addReservation(reservationDTO));
+        } catch (ReservationAlreadyExists | UserDoesNotExistException | TennisCourtDoesNotExistsException e) {
             Log.error("Reservation already exists " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        }catch(InvalidDateException e){
-            Log.error("Invalid date "+ e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            return status(BAD_REQUEST).body(null);
+        } catch (InvalidDateException e) {
+            Log.error("Invalid date " + e.getMessage());
+            return status(BAD_REQUEST).body(null);
         }
     }
 
     @GetMapping("/getAll")
-    public ResponseEntity<List<Reservation>> getAllReservation(){
-        Optional<List<Reservation>> reservation = Optional.ofNullable(reservationService.getAllReservations());
-        if(reservation.isPresent()){
-            return ok(reservationService.getAllReservations());
-        }
-        else{
+    public ResponseEntity<List<Reservation>> getAllReservation() {
+        List<Reservation> reservations = reservationService.getAllReservations();
+        if (ofNullable(reservations).isPresent()) {
+            Log.info("Get all reservations: ");
+            return ok(reservations);
+        } else {
             return notFound().build();
         }
     }
 
     @PostMapping("/available")
-    public ResponseEntity<List<TennisCourt>> getAvailableTennisCourts(@RequestBody DateRangeRequest dateRangeRequest) {
-        try{
-            List<TennisCourt> availableTennisCourts = reservationService.getAvailableTennisCourts(dateRangeRequest.start(), dateRangeRequest.end());
-            return ResponseEntity.ok(availableTennisCourts);
-        }catch(TennisCourtDoesNotExistsException e){
-            Log.error("No available tennis courts "+e.getMessage());
-            return ResponseEntity.notFound().build();
-        }catch (InvalidDateException e){
+    public ResponseEntity<List<TennisCourt>> getAvailableTennisCourts(@RequestBody LocalDateTime startTime, LocalDateTime endTime) {
+        try {
+            return ok(reservationService.getAvailableTennisCourts(startTime, endTime));
+        } catch (TennisCourtDoesNotExistsException e) {
+            Log.error("No available tennis courts " + e.getMessage());
+            return notFound().build();
+        } catch (InvalidDateException e) {
             Log.error("Invalid date " + e.getMessage());
-            return ResponseEntity.notFound().build();
+            return badRequest().build();
         }
-
-
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<Reservation> updateReservation(@PathVariable("id") int reservationId, @RequestBody Reservation reservation){
-        try{
-            //Reservation reservation = reservationService.fromDTO(reservationDTO);
-            Optional<Reservation> updatedReservation = Optional.ofNullable(reservationService.update(reservationId, reservation));
-            Log.info("Get all"+ reservation);
-            return ok(updatedReservation.get());
-        }
-        catch(ReservationAlreadyExists e){
-            Log.error("Error processing update "+e.getMessage());
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<Optional<Reservation>> updateReservation(@PathVariable("id") int reservationId, @RequestBody ReservationDTO reservationDTO) {
+        try {
+            var updatedReservation = ofNullable(reservationService.update(reservationId, reservationDTO));
+            Log.info("Updating " + reservationDTO);
+            return ok(updatedReservation);
+        } catch (ReservationAlreadyExists | TennisCourtDoesNotExistsException | UserDoesNotExistException e) {
+            Log.error("Error processing update " + e.getMessage());
+            return notFound().build();
         }
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Price> deletePrice(@PathVariable("id") int reservationId){
-        try{
-            Log.info("Deleting reservation: "+ reservationId);
+    public ResponseEntity<Price> deletePrice(@PathVariable("id") int reservationId) {
+        try {
+            Log.info("Deleting reservation: " + reservationId);
             reservationService.delete(reservationId);
-            return ResponseEntity.ok().build();
-        }catch (ReservationDoesNotExistException e) {
+            return ok().build();
+        } catch (ReservationDoesNotExistException e) {
             Log.error("Error processing delete " + e.getMessage());
-            return ResponseEntity.notFound().build();
+            return notFound().build();
         }
     }
-
-
 }

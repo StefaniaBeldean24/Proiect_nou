@@ -2,16 +2,14 @@ package com.internship.backend.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter
 @Getter
+@Builder
 public class Price {
 
     @Id
@@ -23,7 +21,7 @@ public class Price {
     private int price;
 
     @ManyToOne
-    @JoinColumn(name="tennis_court_id")
+    @JoinColumn(name = "tennis_court_id")
     @JsonBackReference
     private TennisCourt tennisCourt;
 }

@@ -1,22 +1,25 @@
 package com.internship.backend.service;
 
 import com.internship.backend.dto.UserDTO;
+import com.internship.backend.exceptions.EmailAlreadyExistsException;
+import com.internship.backend.exceptions.IdUserNotFoundException;
 import com.internship.backend.exceptions.UserAlreadyExistsException;
 import com.internship.backend.exceptions.UserDoesNotExistException;
+import com.internship.backend.mappper.UserMapper;
 import com.internship.backend.model.Authority;
-import com.internship.backend.model.Users;
+import com.internship.backend.model.User;
 import com.internship.backend.repository.AuthorityRepository;
 import com.internship.backend.repository.UserRepository;
-import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
+import static java.util.Optional.ofNullable;
 
 @Service
 public class UserService {
@@ -25,94 +28,96 @@ public class UserService {
     private UserRepository userRepository;
 
     @Autowired
-    private PasswordEncoder passwordEncoder;
-
-
-    @Autowired
     private AuthorityRepository authorityRepository;
 
-    public Users register(Users user) throws UserAlreadyExistsException {
-        if (userRepository.findByUsername(user.getUsername()) != null) {
-            throw new UserAlreadyExistsException("Username already exists");
-        }
-        if (userRepository.findByEmail(user.getEmail()) != null) {
-            throw new UserAlreadyExistsException("Email already exists");
-        }
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    private UserMapper userMapper = new UserMapper();
+
+    public User register(UserDTO userDTO) throws EmailAlreadyExistsException, UserAlreadyExistsException {
+        User user = userMapper.mapToUser(userDTO);
+        registerValidation(user);
+
         String hashPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(hashPassword);
 
-        Users savedUser = userRepository.save(user);
+        User savedUser = userRepository.save(user);
 
         Set<Authority> authorities = user.getAuthorities();
         Iterator<Authority> iterator = authorities.iterator();
-
         authorityRepository.save(iterator.next());
 
         return savedUser;
     }
 
-    public Users fromDTO(UserDTO userDTO) {
-        Users user = Users.builder()
-                .username(userDTO.getUsername())
-                .password(userDTO.getPassword())
-                .email(userDTO.getEmail())
-                .build();
-
-        Set<Authority> authorities = new HashSet<>();
-
-        Authority authority = new Authority();
-        authority.setName(userDTO.getRole());
-        authority.setUser(user);
-
-        authorities.add(authority);
-        user.setAuthorities(authorities);
-
-        return user;
+    public List<User> getAllUsersProcedure() {
+        return userRepository.getAllUsersProcedure();
     }
 
-    public UserDTO toDTO(Users user){
-        String role = user.getAuthorities().iterator().next().getName();
-
-        return UserDTO.builder()
-                .role(role)
-                .username(user.getUsername())
-                .password(user.getPassword())
-                .email(user.getEmail())
-                .build();
+    public void deleteUserByIdProcedure(Integer userId) {
+        authorityRepository.deleteByUserId(userId);
+        userRepository.deleteUserByIdProcedure(userId);
     }
 
-    public Users update(int userId, Users updatedUser) throws UserDoesNotExistException {
-        Users user = userRepository.findById(userId).orElseThrow(() -> new UserDoesNotExistException("User not found"));
+    private void registerValidation(User user) throws UserAlreadyExistsException, EmailAlreadyExistsException {
+        Optional<User> findByUsername = ofNullable(userRepository.findByUsername(user.getUsername()));
+        Optional<User> findByEmail = ofNullable(userRepository.findByEmail(user.getEmail()));
 
-        //user.setRole(updatedUser.getRole());
-        user.setUsername(updatedUser.getUsername());
-        user.setPassword(updatedUser.getPassword());
-        user.setEmail(updatedUser.getEmail());
+        if (findByUsername.isPresent()) {
+            throw new UserAlreadyExistsException("Username already exists");
+        }
 
-        return userRepository.save(user);
+        if (findByEmail.isPresent()) {
+            throw new EmailAlreadyExistsException("Email already exists");
+        }
     }
 
-    public void delete(int userId) throws UserDoesNotExistException {
-        if (!userRepository.existsById(userId))
-            throw new UserDoesNotExistException("User does not exist");
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
 
-        userRepository.deleteById(userId);
+    public Optional<User> getUserById(Integer id) {
+        return userRepository.findById(id);
+    }
 
+    public User updateUser(Integer id, UserDTO userDetailsDTO) throws IdUserNotFoundException {
+        Optional<User> optionalUser = userRepository.findById(id);
+
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            setUsernamePasswordEmail(user, userDetailsDTO.getUsername(), userDetailsDTO.getPassword(), userDetailsDTO.getEmail());
+
+            Authority authority = new Authority();
+            authority.setName(userDetailsDTO.getRole());
+            user.setAuthorities(Set.of(authority));
+
+            return userRepository.save(user);
+        } else {
+            throw new IdUserNotFoundException("User not found with id " + id);
+        }
+    }
+
+    public void setUsernamePasswordEmail(User user, String username, String password, String email) {
+        user.setUsername(username);
+        user.setPassword(password);
+        user.setEmail(email);
+    }
+
+    public void resetAutoIncrement() {
         if (userRepository.count() == 0) {
             userRepository.resetAutoIncrementId();
         }
     }
 
-    public Users login(String username, String password) {
-        var users = userRepository.findByUsername(username);
+    public void deleteUser(Integer id) throws UserDoesNotExistException {
+        if (!userRepository.existsById(id)) {
+            throw new UserDoesNotExistException("User does not exisit");
+        }
 
-        if (!ObjectUtils.isEmpty(users))
-            return users;
+        userRepository.deleteById(id);
 
-        return null;
-    }
-
-    public List<Users> getAllUsers() {
-        return userRepository.findAll();
+        resetAutoIncrement();
     }
 }
+
