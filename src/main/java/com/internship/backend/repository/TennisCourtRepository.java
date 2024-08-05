@@ -3,5 +3,8 @@ package com.internship.backend.repository;
 import com.internship.backend.model.TennisCourt;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 
-public interface TennisCourtRepository extends CouchbaseRepository<TennisCourt, Integer> {
+import java.util.Optional;
+
+public interface TennisCourtRepository extends CouchbaseRepository<TennisCourt, String> {
+    Optional<TennisCourt> findByName(String name);
 }

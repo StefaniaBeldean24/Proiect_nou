@@ -1,18 +1,18 @@
 package com.internship.backend.controller;
 
+import com.internship.backend.dto.AuthorityDTO;
+import com.internship.backend.exceptions.AuthorityAlreadyExistsException;
+import com.internship.backend.exceptions.AuthorityDoesNotExistException;
 import com.internship.backend.exceptions.UserDoesNotExistException;
 import com.internship.backend.model.Authority;
 import com.internship.backend.service.AuthorityService;
-
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
-import static org.springframework.http.ResponseEntity.notFound;
+import static org.springframework.http.ResponseEntity.badRequest;
 import static org.springframework.http.ResponseEntity.ok;
 
 
@@ -24,8 +24,8 @@ public class AuthorityController {
     private AuthorityService authorityService;
 
     @PostMapping("/addAuthority/{userId}")
-    public Authority createAuthority(@PathVariable Integer userId, @RequestBody Authority authority) throws UserDoesNotExistException {
-        return authorityService.createAuthority(userId, authority);
+    public Authority createAuthority(@RequestBody AuthorityDTO authorityDTO) throws UserDoesNotExistException, AuthorityAlreadyExistsException {
+        return authorityService.createAuthority(authorityDTO);
     }
 
     @GetMapping("/getAllAuthorities")
@@ -34,7 +34,12 @@ public class AuthorityController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public void deleteAuthority(@PathVariable Integer id) {
-        authorityService.deleteAuthority(id);
+    public ResponseEntity<Authority> deleteAuthority(@PathVariable String userUsername, @PathVariable String role) {
+        try {
+            authorityService.deleteAuthority(userUsername, role);
+            return ok().build();
+        } catch (UserDoesNotExistException | AuthorityDoesNotExistException e) {
+            return badRequest().build();
+        }
     }
 }

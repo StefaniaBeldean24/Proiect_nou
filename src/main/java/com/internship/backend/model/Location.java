@@ -1,31 +1,31 @@
 package com.internship.backend.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.couchbase.core.mapping.Document;
 
 import java.util.List;
+import java.util.UUID;
 
 @Document
-@NoArgsConstructor
-@AllArgsConstructor
 @Setter
 @Getter
+@AllArgsConstructor
 public class Location {
 
     @Id
-    private Integer id;
+    private String id;
 
     private String name;
     private String details;
-
     private List<TennisCourt> tennisCourt;
+
+    public Location() {
+        this.id = UUID.randomUUID().toString();
+    }
 
     @Override
     public String toString() {

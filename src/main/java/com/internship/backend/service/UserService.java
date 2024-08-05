@@ -4,22 +4,17 @@ import com.internship.backend.dto.UserDTO;
 import com.internship.backend.exceptions.UserAlreadyExistsException;
 import com.internship.backend.exceptions.UserDoesNotExistException;
 import com.internship.backend.model.Authority;
-import com.internship.backend.model.Reservation;
-import com.internship.backend.model.Users;
+import com.internship.backend.model.User;
 import com.internship.backend.repository.AuthorityRepository;
-import com.internship.backend.repository.ReservationRepository;
 import com.internship.backend.repository.UserRepository;
-
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.IdGenerator;
 
-import java.util.*;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
 @Service
 public class UserService {
 
@@ -27,100 +22,77 @@ public class UserService {
     private UserRepository userRepository;
 
     @Autowired
-    private IdGeneratorService idGeneratorService;
-
-    @Autowired
     private AuthorityRepository authorityRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    Logger logger = LoggerFactory.getLogger(UserService.class);
-    @Autowired
-    private ReservationRepository reservationRepository;
+    public User register(UserDTO userDTO) throws UserAlreadyExistsException {
+        return register(addIdUsernamePasswordEmailAuthorityToUser(userDTO));
+    }
 
-    @Transactional
-    public Users register(Users user) throws UserAlreadyExistsException {
-        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+    public User register(User user) {
+        return userRepository.save(user);
+    }
+
+    private User addIdUsernamePasswordEmailAuthorityToUser(UserDTO userDTO) throws UserAlreadyExistsException {
+        if (userRepository.findByUsername(userDTO.getUsername()).isPresent()) {
             throw new UserAlreadyExistsException("Username already exists");
         }
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+        if (userRepository.findByEmail(userDTO.getEmail()).isPresent()) {
             throw new UserAlreadyExistsException("Email already exists");
         }
 
-        user.setId(idGeneratorService.getCurrentId());
-        String hashPassword = passwordEncoder.encode(user.getPassword());
-        user.setPassword(hashPassword);
-
-        Users savedUser = userRepository.save(user);
-
-        Set<Authority> authorities = user.getAuthorities();
-        Iterator<Authority> iterator = authorities.iterator();
-        authorityRepository.save(iterator.next());
-
-        return savedUser;
-    }
-
-    public Users fromDTO(UserDTO userDTO) {
-        Users user = new Users();
+        var user = new User();
+        user.setId(UUID.randomUUID().toString());
         user.setUsername(userDTO.getUsername());
-        user.setPassword(userDTO.getPassword());
+        var hashPassword = passwordEncoder.encode(userDTO.getPassword());
+        user.setPassword(hashPassword);
         user.setEmail(userDTO.getEmail());
 
-        Authority authority = resolveAuthority(userDTO.getRole());
-        user.setAuthorities(Collections.singleton(authority));
+        var authority = new Authority();
+        authority.setId(UUID.randomUUID().toString());
+        authority.setName(userDTO.getRole());
+
+        user.setAuthorities(Set.of(authority));
+
+        authorityRepository.save(authority);
 
         return user;
     }
 
-    private Authority resolveAuthority(String roleName) {
-        Optional<Authority> optionalAuthority = authorityRepository.findByName(roleName);
-        if (optionalAuthority.isPresent()) {
-            return optionalAuthority.get();
-        } else {
-            Authority newAuthority = new Authority(roleName);
-            newAuthority.setId(idGeneratorService.getCurrentId());
-            return authorityRepository.save(newAuthority);
-        }
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
     }
 
+    public User updateUser(String username, UserDTO userDTO) throws UserDoesNotExistException {
+        var user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserDoesNotExistException("User not found"));
 
-    public List<Users> getAllUsers() {
-        List<Users> users = userRepository.findAll();
+        updateOldUser(user, userDTO);
 
-        users.forEach(user -> {
-            List<Reservation> reservations = reservationRepository.findByUserId(user.getId());
-            user.setReservations(reservations);
-        });
-        logger.info("Number of users: " + users.size());
-        return users;
+        return userRepository.save(user);
     }
 
+    public void updateOldUser(User newUser, UserDTO userDTO) {
+        newUser.setUsername(userDTO.getUsername());
+        var hashPassword = passwordEncoder.encode(userDTO.getPassword());
+        newUser.setPassword(hashPassword);
+        newUser.setEmail(userDTO.getEmail());
 
-    public Optional<Users> getUserById(Integer id) {
-        return userRepository.findById(id);
+        var authority = authorityRepository.findByName(userDTO.getRole()).get();
+        authority.setName(userDTO.getRole());
+
+        newUser.setAuthorities(Set.of(authority));
     }
 
+    public void deleteUser(String username) throws UserDoesNotExistException {
+        var userToDelete = userRepository.findByUsername(username).stream()
+                .filter(user -> user.getUsername().equals(username))
+                .findFirst()
+                .orElseThrow(() -> new UserDoesNotExistException("User not found"));
 
-    public Users updateUser(Integer id, Users userDetails) {
-        Optional<Users> optionalUser = userRepository.findById(id);
-        if (optionalUser.isPresent()) {
-            Users user = optionalUser.get();
-            user.setUsername(userDetails.getUsername());
-            user.setPassword(userDetails.getPassword());
-            user.setEmail(userDetails.getEmail());
-            user.setAuthorities(userDetails.getAuthorities());
-            return userRepository.save(user);
-        } else {
-            throw new RuntimeException("User not found with id " + id);
-        }
-    }
-
-    public void deleteUser(Integer id) throws UserDoesNotExistException {
-        if(!userRepository.existsById(id)){
-            throw new UserDoesNotExistException("User does not exisit");
-        }
-        userRepository.deleteById(id);
+        userRepository.delete(userToDelete);
     }
 }
 

@@ -13,5 +13,5 @@ public class PriceDTO {
     private String season;
     private String periodOfDay;
     private int price;
-    private int tennisCourtId;
+    private String tennisCourtName;
 }

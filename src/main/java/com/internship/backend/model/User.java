@@ -1,25 +1,23 @@
 package com.internship.backend.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.validation.constraints.NotNull;
-
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.core.mapping.Field;
 
-
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @Document
 @Getter
 @Setter
-public class Users {
+@Builder
+@AllArgsConstructor
+public class User {
 
     @Id
-    private Integer id;
+    private String id;
 
     @Field
     private String username;
@@ -37,16 +35,8 @@ public class Users {
     //@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private List<Reservation> reservations;
 
-
-    public Users(String username, String password, String email, Set<Authority> authorities) {
-        this.username = username;
-        this.password = password;
-        this.email = email;
-        this.authorities = authorities;
-    }
-
-    public Users() {
-
+    public User() {
+        this.id = UUID.randomUUID().toString();
     }
 
     @Override
@@ -54,10 +44,9 @@ public class Users {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Users users = (Users) o;
-        return id == users.id && username.equals(users.username) && password.equals(users.password) && email.equals(users.email);
+        User users = (User) o;
+        return id.equals(users.id) && username.equals(users.username) && password.equals(users.password) && email.equals(users.email);
     }
-
 
     @Override
     public String toString() {
@@ -68,5 +57,4 @@ public class Users {
                 ", email='" + email + '\'' +
                 '}';
     }
-
 }

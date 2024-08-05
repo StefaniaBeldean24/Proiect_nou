@@ -1,17 +1,22 @@
 package com.internship.backend.service;
 
+import com.internship.backend.dto.ReservationDTO;
 import com.internship.backend.exceptions.*;
-import com.internship.backend.model.NewDate;
 import com.internship.backend.model.Reservation;
-
+import com.internship.backend.model.ReservationValidator;
 import com.internship.backend.model.TennisCourt;
 import com.internship.backend.repository.ReservationRepository;
-
 import com.internship.backend.repository.TennisCourtRepository;
+import com.internship.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class ReservationService {
@@ -20,130 +25,116 @@ public class ReservationService {
     private ReservationRepository reservationRepository;
 
     @Autowired
-    private IdGeneratorService idGeneratorService;
-
-    @Autowired
     private TennisCourtRepository tennisCourtRepository;
 
+    @Autowired
+    private UserRepository userRepository;
 
-    public Reservation addReservation(Reservation reservation) throws ReservationAlreadyExists, InvalidDateException {
+    public Reservation addReservation(ReservationDTO reservationDTO) throws ReservationAlreadyExists, InvalidDateException, UserDoesNotExistException, TennisCourtDoesNotExistsException {
+        var validator = new ReservationValidator(reservationDTO);
+        validator.validate();
 
-        reservationValidation(reservation);
-        if (isValidReservation((reservation)))
-        {
-            reservation.setId(idGeneratorService.getCurrentId());
-            return reservationRepository.save(reservation);
-        }
-        else{
+        if (isValidReservation((reservationDTO))) {
+            return addReservation(addIdTennisCourtUSerStartTimeEndTimeToReservation(reservationDTO));
+        } else {
             throw new ReservationAlreadyExists("Reservation intersects another one");
         }
     }
 
-    private void reservationValidation(Reservation reservation) throws InvalidDateException {
-        if (reservation.getStartTime().getMonth() != reservation.getEndTime().getMonth()) {
-            throw new InvalidDateException("The start date and end date must be within the same month");
-        }
+    private Reservation addIdTennisCourtUSerStartTimeEndTimeToReservation(ReservationDTO reservationDTO) throws UserDoesNotExistException, TennisCourtDoesNotExistsException {
 
-        if(reservation.getStartTime().getDay() != reservation.getEndTime().getDay()){
-            throw new InvalidDateException("The start date and end date must be within the same day");
-        }
 
-        if(reservation.getStartTime().getYear() != reservation.getEndTime().getYear()){
-            throw new InvalidDateException("The start date and end date must be within the same year");
-        }
+        var user = userRepository.findByUsername(reservationDTO.getUserUsername())
+                .orElseThrow(() -> new UserDoesNotExistException("User not found"));
 
-        if(reservation.getEndTime().getHour() - reservation.getStartTime().getHour() != 2){
-            throw new InvalidDateException("The reservation duration must be exactly 2 hours");
-        }
+        var tennisCourt = tennisCourtRepository.findByName(reservationDTO.getTennisCourtName())
+                .orElseThrow(() -> new TennisCourtDoesNotExistsException("Tennis Court not found"));
+
+        var reservation = new Reservation();
+        reservation.setId(UUID.randomUUID().toString());
+        reservation.setTennisCourtName(tennisCourt.getName());
+        reservation.setUserUsername(user.getUsername());
+        reservation.setStartTime(reservationDTO.getStartTime());
+        reservation.setEndTime(reservationDTO.getEndTime());
+
+        return reservation;
     }
 
-    private void dateValidation(NewDate startDate, NewDate endDate) throws InvalidDateException {
-        if (startDate.getMonth() != endDate.getMonth()) {
-            throw new InvalidDateException("The start date and end date must be within the same month");
-        }
-
-        if(startDate.getDay() != endDate.getDay()){
-            throw new InvalidDateException("The start date and end date must be within the same day");
-        }
-
-        if(startDate.getYear() != endDate.getYear()){
-            throw new InvalidDateException("The start date and end date must be within the same year");
-        }
-
-        if(endDate.getHour() - startDate.getHour() != 2){
-            throw new InvalidDateException("The reservation duration must be exactly 2 hours");
-        }
+    public Reservation addReservation(Reservation reservation) {
+        return reservationRepository.save(reservation);
     }
 
-    private boolean isValidReservation(Reservation reservation){
-        List<Reservation> reservationList = reservationRepository.findAll();
-        for(Reservation elem : reservationList){
-            if(elem.getTennisCourtId() == reservation.getTennisCourtId()) {
-                if (!(reservation.getEndTime().isBefore(elem.getStartTime()) || reservation.getStartTime().isAfter(elem.getEndTime()))) {
-                    return false;
-                }
-            }
+    private boolean isValidReservation(ReservationDTO reservationDTO) {
+        if (Objects.isNull(reservationDTO)) {
+            return false;
         }
-        return true;
+
+        var startTime = reservationDTO.getStartTime();
+        var endTime = reservationDTO.getEndTime();
+
+        if (Objects.isNull(startTime) || Objects.isNull(endTime)) {
+            return false;
+        }
+
+        if (!startTime.isBefore(endTime)) {
+            return false;
+        }
+
+        // Check for overlapping reservations
+        boolean overlaps = reservationRepository.findAll().stream()
+                .anyMatch(reservation ->
+                        reservation.getTennisCourtName().equals(reservationDTO.getTennisCourtName()) &&
+                                ((reservation.getStartTime().isBefore(endTime) && reservation.getEndTime().isAfter(startTime)) ||
+                                        (reservation.getStartTime().isBefore(startTime) && reservation.getEndTime().isAfter(endTime)) ||
+                                        (reservation.getStartTime().equals(startTime) && reservation.getEndTime().equals(endTime))));
+
+        return !overlaps;
     }
 
     public List<Reservation> getAllReservations() {
         return reservationRepository.findAll();
     }
 
-
-    public Optional<Reservation> getReservationById(Integer id) {
+    public Optional<Reservation> getReservationById(String id) {
         return reservationRepository.findById(id);
     }
 
-public Reservation updateReservation(Integer id, Reservation reservationDetails) throws ReservationDoesNotExistException {
-    return reservationRepository.findById(id)
-            .map(reservation -> tryUpdateReservation(reservation, reservationDetails))
-            .orElseThrow(() -> new ReservationDoesNotExistException("Reservation not found with id " + id));
-}
+    public Reservation updateReservation(Reservation reservationDetails) throws ReservationDoesNotExistException {
+        return reservationRepository.findById(reservationDetails.getId())
+                .map(reservation -> updateOldReservation(reservation, reservationDetails))
+                .orElseThrow(() -> new ReservationDoesNotExistException("Reservation not found"));
+    }
 
-    private Reservation tryUpdateReservation(Reservation reservation, Reservation reservationDetails) {
-        reservation.setUserId(reservationDetails.getUserId());
-        reservation.setTennisCourtId(reservationDetails.getTennisCourtId());
+    private Reservation updateOldReservation(Reservation reservation, Reservation reservationDetails) {
+        reservation.setUserUsername(reservationDetails.getUserUsername());
+        reservation.setTennisCourtName(reservationDetails.getTennisCourtName());
         reservation.setStartTime(reservationDetails.getStartTime());
         reservation.setEndTime(reservationDetails.getEndTime());
         return reservationRepository.save(reservation);
     }
 
-    public void deleteReservation(Integer id) throws ReservationDoesNotExistException {
-        if(!reservationRepository.existsById(1)){
+    public void deleteReservation(String id) throws ReservationDoesNotExistException {
+        if (!reservationRepository.existsById(id)) {
             throw new ReservationDoesNotExistException("Reservation not found with id " + id);
         }
         reservationRepository.deleteById(id);
     }
 
-    //metoda in care user-ul sa vada toate terenurile disponibile dintr-o anumita data
-    public List<TennisCourt> getAvailableTennisCourts(NewDate startDate, NewDate endDate) throws TennisCourtDoesNotExistsException, InvalidDateException {
-        int tennisCourtId;
-        List<TennisCourt> tennisCourts = tennisCourtRepository.findAll();
+    public List<TennisCourt> getAvailableTennisCourts(LocalDateTime startTime, LocalDateTime endTime) throws TennisCourtDoesNotExistsException, InvalidDateException {
         List<Reservation> reservations = reservationRepository.findAll();
 
-        dateValidation(startDate, endDate);
-        for (Reservation elem : reservations){
-            if(( elem.getStartTime().equals(startDate) &&  elem.getEndTime().equals(endDate))
-                    || (elem.getStartTime().isBefore(endDate) && endDate.isBefore(elem.getEndTime()))
-                    || (elem.getStartTime().isBefore(startDate) && startDate.isBefore(elem.getEndTime())))
-            {
-                tennisCourtId = elem.getTennisCourtId();
+        List<TennisCourt> availableTennisCourts = tennisCourtRepository.findAll().stream()
+                .filter(tennisCourt -> reservations.stream()
+                        .noneMatch(reservation ->
+                                reservation.getTennisCourtName().equals(tennisCourt.getName()) &&
+                                        ((reservation.getStartTime().equals(startTime) && reservation.getEndTime().equals(endTime)) ||
+                                                (reservation.getStartTime().isBefore(endTime) && endTime.isBefore(reservation.getEndTime())) ||
+                                                (reservation.getStartTime().isBefore(startTime) && startTime.isBefore(reservation.getEndTime()))))) //filters out tennis courts that have overlapping reservations
+                .collect(Collectors.toList()); //collects the filtered tennis courts into a list
 
-                for (int i = 0; i < tennisCourts.size(); i++) {
-                    if (tennisCourts.get(i).getId() == tennisCourtId) {
-                        tennisCourts.remove(i);
-                    }
-                }
-            }
-        }
-        if(!tennisCourts.isEmpty()){
-            return tennisCourts;
-        }
-        else{
+        if (availableTennisCourts.isEmpty()) {
             throw new TennisCourtDoesNotExistsException("No tennis courts available");
         }
+        return availableTennisCourts;
     }
-
 }

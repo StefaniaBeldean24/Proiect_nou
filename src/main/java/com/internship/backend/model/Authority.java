@@ -1,28 +1,32 @@
 package com.internship.backend.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.couchbase.core.mapping.Document;
-import org.springframework.data.couchbase.core.mapping.Field;
+
+import java.util.UUID;
 
 @Document
 @Getter
 @Setter
+@Builder
+@AllArgsConstructor
 public class Authority {
 
     @Id
-    private Integer id;
+    private String id;
 
-    @Field
     private String name;
 
-    public Authority(String roleUser) {
-        this.name = roleUser;
+    public Authority(String name) {
+        this.name = name;
     }
 
     public Authority() {
-
+        this.id = UUID.randomUUID().toString();
     }
 
     @Override

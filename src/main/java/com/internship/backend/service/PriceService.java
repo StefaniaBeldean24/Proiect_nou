@@ -2,6 +2,7 @@ package com.internship.backend.service;
 
 import com.internship.backend.dto.PriceDTO;
 import com.internship.backend.exceptions.PriceIdDoesNotExistException;
+import com.internship.backend.exceptions.TennisCourtDoesNotExistsException;
 import com.internship.backend.model.Price;
 import com.internship.backend.model.TennisCourt;
 import com.internship.backend.repository.PriceRepository;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class PriceService {
@@ -20,49 +22,64 @@ public class PriceService {
     @Autowired
     private TennisCourtRepository tennisCourtRepository;
 
-    @Autowired
-    private IdGeneratorService idGeneratorService;
-
-
-    public List<Price> getAllPrices(){
+    public List<Price> getAllPrices() {
         return priceRepository.findAll();
     }
 
-    public Price addPrice(Price price){
-        price.setId(idGeneratorService.getCurrentId());
+    public Price addPrice(PriceDTO priceDTO) throws TennisCourtDoesNotExistsException {
+        var newPrice = addIdSeasonPeriodOfDayCostTennisCourtToPrice(priceDTO);
+        return addPrice(newPrice);
+    }
+
+    public Price addPrice(Price price) {
         return priceRepository.save(price);
     }
 
-    public Price fromDTO(PriceDTO priceDTO){
-        Price price = new Price();
+    public Price addIdSeasonPeriodOfDayCostTennisCourtToPrice(PriceDTO priceDTO) throws TennisCourtDoesNotExistsException {
+        var tennisCourt = tennisCourtRepository.findByName(priceDTO.getTennisCourtName())
+                .orElseThrow(() -> new TennisCourtDoesNotExistsException("Tennis Court not found"));
+
+        var price = new Price();
+        price.setId(UUID.randomUUID().toString());
         price.setSeason(priceDTO.getSeason());
         price.setPeriodOfDay(priceDTO.getPeriodOfDay());
         price.setPrice(priceDTO.getPrice());
+        price.setTennisCourt(tennisCourt);
 
-        for(TennisCourt court : tennisCourtRepository.findAll()){
-            if(court.getId() == priceDTO.getTennisCourtId()){
-                price.setTennisCourt(court);
-            }
-        }
         return price;
     }
 
-    public Price update(int priceId, Price updatedPrice) throws PriceIdDoesNotExistException {
-        Price price = priceRepository.findById(priceId).orElseThrow(()-> new PriceIdDoesNotExistException("Price not found"));
+    public Price update(String tennisCourtName, PriceDTO updatedPriceDTO) throws PriceIdDoesNotExistException, TennisCourtDoesNotExistsException {
+        var tennisCourt = tennisCourtRepository.findByName(tennisCourtName)
+                .orElseThrow(() -> new TennisCourtDoesNotExistsException("Tennis Court not found"));
 
-        price.setPrice(updatedPrice.getPrice());
-        price.setSeason(updatedPrice.getSeason());
-        price.setPeriodOfDay(updatedPrice.getPeriodOfDay());
+        var price = priceRepository.findPriceByTennisCourtName(tennisCourtName).stream()
+                .filter(p -> p.getTennisCourt().getName().equals(tennisCourtName))
+                .findFirst()
+                .orElseThrow(() -> new PriceIdDoesNotExistException("Price ID not found"));
 
+        updateOldPrice(price, updatedPriceDTO, tennisCourt);
 
         return priceRepository.save(price);
-
     }
 
-    public void delete(int priceId){
-        if(!priceRepository.existsById(priceId))
-            throw new RuntimeException("Price does not exist");
+    public void updateOldPrice(Price price, PriceDTO updatedPriceDTO, TennisCourt tennisCourt) {
+        price.setSeason(updatedPriceDTO.getSeason());
+        price.setPeriodOfDay(updatedPriceDTO.getPeriodOfDay());
+        price.setPrice(updatedPriceDTO.getPrice());
+        price.setTennisCourt(tennisCourt);
+    }
 
-        priceRepository.deleteById(priceId);
+    public void delete(String tennisCourtName) throws TennisCourtDoesNotExistsException {
+        var tennisCourt = tennisCourtRepository.findByName(tennisCourtName)
+                .orElseThrow(() -> new TennisCourtDoesNotExistsException("Tennis Court not found"));
+
+        var priceToDelete = priceRepository.findPriceByTennisCourtName(tennisCourtName).stream()
+                .filter(price -> price.getTennisCourt().getName().equals(tennisCourtName))
+                .findFirst()
+                .orElseThrow(() -> new TennisCourtDoesNotExistsException("Price not found"));
+
+        tennisCourt.getPrices().remove(priceToDelete);
+        priceRepository.delete(priceToDelete);
     }
 }

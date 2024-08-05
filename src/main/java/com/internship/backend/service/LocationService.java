@@ -4,73 +4,61 @@ import com.internship.backend.dto.LocationDTO;
 import com.internship.backend.exceptions.LocationAlreadyExistsException;
 import com.internship.backend.exceptions.LocationDoesNotExistException;
 import com.internship.backend.model.Location;
-import com.internship.backend.model.TennisCourt;
 import com.internship.backend.repository.LocationRepository;
-import com.internship.backend.repository.TennisCourtRepository;
-
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
+import java.util.UUID;
 
 @Service
 public class LocationService {
     @Autowired
     private LocationRepository locationRepository;
 
-    @Autowired
-    private TennisCourtRepository tennisCourtRepository;
-
-    @Autowired
-    private IdGeneratorService idGeneratorService;
-
-    public List<Location> getAllLocations(){
+    public List<Location> getAllLocations() {
         return locationRepository.findAll();
     }
 
-    public Location addLocation(Location location) throws LocationAlreadyExistsException {
-
-        location.setId(idGeneratorService.getCurrentId());
-
-        if(locationRepository.findByName(location.getName()) != null){
-            throw new LocationAlreadyExistsException("Location already exists");
-        }
-        Location savedLocation = locationRepository.save(location);
-        return savedLocation;
+    public Location addLocation(LocationDTO locationDTO) throws LocationAlreadyExistsException {
+        var newLocation = addIdNameDetailsToLocation(locationDTO);
+        return addLocation(newLocation);
     }
 
-    public Location fromDTO(LocationDTO locationDTO){
-        Location location = new Location();
-        location.setId(locationDTO.getId());
+    public Location addIdNameDetailsToLocation(LocationDTO locationDTO) throws LocationAlreadyExistsException {
+        if (locationRepository.findByName(locationDTO.getName()).isPresent()) {
+            throw new LocationAlreadyExistsException("Location already exists");
+        }
+
+        var location = new Location();
+        location.setId(UUID.randomUUID().toString());
         location.setName(locationDTO.getName());
         location.setDetails(locationDTO.getDetails());
 
-        List<TennisCourt> tennisCourts = new ArrayList<>();
-        for (TennisCourt elem : tennisCourtRepository.findAll()){
-            if (elem.getId() == locationDTO.getId()) {
-                tennisCourts.add(elem);
-            }
-        }
-        location.setTennisCourt(tennisCourts);
         return location;
     }
 
-    public Location update(int locationId, Location updatedLocation) throws LocationDoesNotExistException {
-        Location location = locationRepository.findById(locationId).orElseThrow(()->new LocationDoesNotExistException("Location not found"));
-
-        location.setName(updatedLocation.getName());
-        location.setDetails(updatedLocation.getDetails());
-
+    public Location addLocation(Location location) {
         return locationRepository.save(location);
     }
 
-    public void delete(int locationID) throws LocationDoesNotExistException {
-        if(!locationRepository.existsById(locationID)){
-            throw new LocationDoesNotExistException("Location id does not exist");
-        }
-        locationRepository.deleteById(locationID);
+    public Location update(String oldLocationName, LocationDTO updatedLocationDTO) throws LocationDoesNotExistException {
+        var location = locationRepository.findByName(oldLocationName)
+                .orElseThrow(() -> new LocationDoesNotExistException("Location not found"));
+
+        updateOldLocation(location, updatedLocationDTO);
+        return locationRepository.save(location);
+    }
+
+    public void updateOldLocation(Location location, LocationDTO newLocation) {
+        location.setName(newLocation.getName());
+        location.setDetails(newLocation.getDetails());
+    }
+
+    public void delete(String locationName) throws LocationDoesNotExistException {
+        var locationToDelete = locationRepository.findByName(locationName)
+                .orElseThrow(() -> new LocationDoesNotExistException("Location not found"));
+
+        locationRepository.delete(locationToDelete);
     }
 }

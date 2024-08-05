@@ -1,29 +1,31 @@
 package com.internship.backend.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.couchbase.core.mapping.Document;
-import org.springframework.data.couchbase.core.mapping.Field;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 
 @Document
 @Setter
 @Getter
+@Builder
+@AllArgsConstructor
 public class Reservation {
 
     @Id
-    private Integer id;
+    private String id;
+    private String userUsername;
+    private String tennisCourtName;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
 
-    @Field
-    private Integer userId;
-
-    @Field
-    private Integer tennisCourtId;
-
-    @Field
-    private NewDate startTime;
-
-    @Field
-    private NewDate endTime;
+    public Reservation() {
+        this.id = UUID.randomUUID().toString();
+    }
 }

@@ -1,7 +1,7 @@
 package com.internship.backend.config;
 
 import com.internship.backend.model.Authority;
-import com.internship.backend.model.Users;
+import com.internship.backend.model.User;
 import com.internship.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -29,9 +29,9 @@ public class UsernamePasswordAuthenticationProvider implements AuthenticationPro
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String username = authentication.getName();
         String password = authentication.getCredentials().toString();
-        Optional<Users> optionalUser = userRepository.findByUsername(username);
+        Optional<User> optionalUser = userRepository.findByUsername(username);
         if(optionalUser.isPresent()){
-            Users user = optionalUser.get();
+            User user = optionalUser.get();
             if(passwordEncoder.matches(password, user.getPassword())){
                 return new UsernamePasswordAuthenticationToken(username, password, getGrantedAuthorities(user.getAuthorities()));
             }
