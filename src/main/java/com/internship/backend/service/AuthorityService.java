@@ -27,22 +27,29 @@ public class AuthorityService {
     @Autowired
     private AuthorityRepository authorityRepository;
 
-    public Authority createAuthority(AuthorityDTO authorityDTO) throws UserDoesNotExistException, AuthorityAlreadyExistsException {
-        var authorityExists = authorityRepository.findByName(authorityDTO.getRole()).isPresent();
-        if (authorityExists) {
-            throw new AuthorityAlreadyExistsException("This role already exists");
-        }
+    public Authority addAuthority(AuthorityDTO authorityDTO) throws UserDoesNotExistException, AuthorityAlreadyExistsException {
+        checkAuthorityExists(authorityDTO);
 
-        var user = userRepository.findByUsername(authorityDTO.getUserUsername())
-                .orElseThrow(() -> new UserDoesNotExistException("User not found"));
+        var user = findUser(authorityDTO);
 
-        var authority = addRoleToAuthority(authorityDTO);
+        var authority = buildAuthority(authorityDTO);
         addAuthorityToUser(authority, user);
 
-        return createAuthority(authority);
+        return addAuthority(authority);
     }
 
-    public Authority addRoleToAuthority(AuthorityDTO authorityDTO) {
+    private void checkAuthorityExists(AuthorityDTO authorityDTO) throws AuthorityAlreadyExistsException {
+        if (authorityRepository.findByName(authorityDTO.getRole()).isPresent()) {
+            throw new AuthorityAlreadyExistsException("This role already exists");
+        }
+    }
+
+    private User findUser(AuthorityDTO authorityDTO) throws UserDoesNotExistException {
+        return userRepository.findByUsername(authorityDTO.getUserUsername())
+                .orElseThrow(() -> new UserDoesNotExistException("User not found"));
+    }
+
+    public Authority buildAuthority(AuthorityDTO authorityDTO) {
         var authority = new Authority();
         authority.setName(authorityDTO.getRole());
         return authority;
@@ -52,7 +59,7 @@ public class AuthorityService {
         user.setAuthorities(Set.of(authority));
     }
 
-    public Authority createAuthority(Authority authority) {
+    public Authority addAuthority(Authority authority) {
         return authorityRepository.save(authority);
     }
 
@@ -63,10 +70,10 @@ public class AuthorityService {
     }
 
     public void deleteAuthority(String userUsername, String role) throws AuthorityDoesNotExistException, UserDoesNotExistException {
-        var user = userRepository.findByUsername(userUsername)
+        final var user = userRepository.findByUsername(userUsername)
                 .orElseThrow(() -> new UserDoesNotExistException("User not found"));
 
-        var authorityToDelete = user.getAuthorities().stream()
+        final var authorityToDelete = user.getAuthorities().stream()
                 .filter(autority -> autority.getName().equals(role))
                 .findFirst()
                 .orElseThrow(() -> new AuthorityDoesNotExistException("Authority not found"));

@@ -27,7 +27,7 @@ public class PriceService {
     }
 
     public Price addPrice(PriceDTO priceDTO) throws TennisCourtDoesNotExistsException {
-        var newPrice = addIdSeasonPeriodOfDayCostTennisCourtToPrice(priceDTO);
+        var newPrice = buildPrice(priceDTO);
         return addPrice(newPrice);
     }
 
@@ -35,25 +35,32 @@ public class PriceService {
         return priceRepository.save(price);
     }
 
-    public Price addIdSeasonPeriodOfDayCostTennisCourtToPrice(PriceDTO priceDTO) throws TennisCourtDoesNotExistsException {
-        var tennisCourt = tennisCourtRepository.findByName(priceDTO.getTennisCourtName())
-                .orElseThrow(() -> new TennisCourtDoesNotExistsException("Tennis Court not found"));
+    private Price buildPrice(PriceDTO priceDTO) throws TennisCourtDoesNotExistsException {
+        var tennisCourt = findTennisCourt(priceDTO);
+        return createPrice(priceDTO, tennisCourt);
+    }
 
+    private TennisCourt findTennisCourt(PriceDTO priceDTO) throws TennisCourtDoesNotExistsException {
+        return tennisCourtRepository.findByName(priceDTO.getTennisCourtName())
+                .orElseThrow(() -> new TennisCourtDoesNotExistsException("Tennis Court not found"));
+    }
+
+    private Price createPrice(PriceDTO priceDTO, TennisCourt tennisCourt) {
         var price = new Price();
         price.setId(UUID.randomUUID().toString());
         price.setSeason(priceDTO.getSeason());
         price.setPeriodOfDay(priceDTO.getPeriodOfDay());
         price.setPrice(priceDTO.getPrice());
         price.setTennisCourt(tennisCourt);
-
         return price;
     }
 
+
     public Price update(String tennisCourtName, PriceDTO updatedPriceDTO) throws PriceIdDoesNotExistException, TennisCourtDoesNotExistsException {
-        var tennisCourt = tennisCourtRepository.findByName(tennisCourtName)
+        final var tennisCourt = tennisCourtRepository.findByName(tennisCourtName)
                 .orElseThrow(() -> new TennisCourtDoesNotExistsException("Tennis Court not found"));
 
-        var price = priceRepository.findPriceByTennisCourtName(tennisCourtName).stream()
+        final var price = priceRepository.findPriceByTennisCourtName(tennisCourtName).stream()
                 .filter(p -> p.getTennisCourt().getName().equals(tennisCourtName))
                 .findFirst()
                 .orElseThrow(() -> new PriceIdDoesNotExistException("Price ID not found"));
@@ -71,10 +78,10 @@ public class PriceService {
     }
 
     public void delete(String tennisCourtName) throws TennisCourtDoesNotExistsException {
-        var tennisCourt = tennisCourtRepository.findByName(tennisCourtName)
+        final var tennisCourt = tennisCourtRepository.findByName(tennisCourtName)
                 .orElseThrow(() -> new TennisCourtDoesNotExistsException("Tennis Court not found"));
 
-        var priceToDelete = priceRepository.findPriceByTennisCourtName(tennisCourtName).stream()
+        final var priceToDelete = priceRepository.findPriceByTennisCourtName(tennisCourtName).stream()
                 .filter(price -> price.getTennisCourt().getName().equals(tennisCourtName))
                 .findFirst()
                 .orElseThrow(() -> new TennisCourtDoesNotExistsException("Price not found"));

@@ -1,7 +1,6 @@
 package com.internship.backend.repository;
 
 import com.internship.backend.model.Location;
-import com.internship.backend.model.TennisCourt;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 
 import java.util.Optional;

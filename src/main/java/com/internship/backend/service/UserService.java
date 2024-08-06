@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import static java.util.Collections.singleton;
+
 @Service
 public class UserService {
 
@@ -28,37 +30,49 @@ public class UserService {
     private PasswordEncoder passwordEncoder;
 
     public User register(UserDTO userDTO) throws UserAlreadyExistsException {
-        return register(addIdUsernamePasswordEmailAuthorityToUser(userDTO));
+        return register(buildUser(userDTO));
     }
 
     public User register(User user) {
         return userRepository.save(user);
     }
 
-    private User addIdUsernamePasswordEmailAuthorityToUser(UserDTO userDTO) throws UserAlreadyExistsException {
+    private User buildUser(UserDTO userDTO) throws UserAlreadyExistsException {
+        checkUserExists(userDTO);
+
+        final var user = createUser(userDTO);
+
+        final var authority = createAuthority(userDTO);
+        user.setAuthorities(singleton(authority));
+
+        authorityRepository.save(authority);
+
+        return user;
+    }
+
+    private void checkUserExists(UserDTO userDTO) throws UserAlreadyExistsException {
         if (userRepository.findByUsername(userDTO.getUsername()).isPresent()) {
             throw new UserAlreadyExistsException("Username already exists");
         }
         if (userRepository.findByEmail(userDTO.getEmail()).isPresent()) {
             throw new UserAlreadyExistsException("Email already exists");
         }
+    }
 
-        var user = new User();
+    private User createUser(UserDTO userDTO) {
+        final var user = new User();
         user.setId(UUID.randomUUID().toString());
         user.setUsername(userDTO.getUsername());
-        var hashPassword = passwordEncoder.encode(userDTO.getPassword());
-        user.setPassword(hashPassword);
+        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
         user.setEmail(userDTO.getEmail());
+        return user;
+    }
 
-        var authority = new Authority();
+    private Authority createAuthority(UserDTO userDTO) {
+        final var authority = new Authority();
         authority.setId(UUID.randomUUID().toString());
         authority.setName(userDTO.getRole());
-
-        user.setAuthorities(Set.of(authority));
-
-        authorityRepository.save(authority);
-
-        return user;
+        return authority;
     }
 
     public List<User> getAllUsers() {
@@ -66,7 +80,7 @@ public class UserService {
     }
 
     public User updateUser(String username, UserDTO userDTO) throws UserDoesNotExistException {
-        var user = userRepository.findByUsername(username)
+        final var user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UserDoesNotExistException("User not found"));
 
         updateOldUser(user, userDTO);
@@ -76,18 +90,18 @@ public class UserService {
 
     public void updateOldUser(User newUser, UserDTO userDTO) {
         newUser.setUsername(userDTO.getUsername());
-        var hashPassword = passwordEncoder.encode(userDTO.getPassword());
+        final var hashPassword = passwordEncoder.encode(userDTO.getPassword());
         newUser.setPassword(hashPassword);
         newUser.setEmail(userDTO.getEmail());
 
-        var authority = authorityRepository.findByName(userDTO.getRole()).get();
+        final var authority = authorityRepository.findByName(userDTO.getRole()).get();
         authority.setName(userDTO.getRole());
 
         newUser.setAuthorities(Set.of(authority));
     }
 
     public void deleteUser(String username) throws UserDoesNotExistException {
-        var userToDelete = userRepository.findByUsername(username).stream()
+        final var userToDelete = userRepository.findByUsername(username).stream()
                 .filter(user -> user.getUsername().equals(username))
                 .findFirst()
                 .orElseThrow(() -> new UserDoesNotExistException("User not found"));

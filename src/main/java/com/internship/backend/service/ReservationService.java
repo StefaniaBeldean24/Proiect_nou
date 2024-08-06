@@ -5,6 +5,7 @@ import com.internship.backend.exceptions.*;
 import com.internship.backend.model.Reservation;
 import com.internship.backend.model.ReservationValidator;
 import com.internship.backend.model.TennisCourt;
+import com.internship.backend.model.User;
 import com.internship.backend.repository.ReservationRepository;
 import com.internship.backend.repository.TennisCourtRepository;
 import com.internship.backend.repository.UserRepository;
@@ -31,32 +32,44 @@ public class ReservationService {
     private UserRepository userRepository;
 
     public Reservation addReservation(ReservationDTO reservationDTO) throws ReservationAlreadyExists, InvalidDateException, UserDoesNotExistException, TennisCourtDoesNotExistsException {
-        var validator = new ReservationValidator(reservationDTO);
-        validator.validate();
+        validateReservationDTO(reservationDTO);
 
-        if (isValidReservation((reservationDTO))) {
-            return addReservation(addIdTennisCourtUSerStartTimeEndTimeToReservation(reservationDTO));
+        if (isValidReservation(reservationDTO)) {
+            return addReservation(buildReservation(reservationDTO));
         } else {
             throw new ReservationAlreadyExists("Reservation intersects another one");
         }
     }
 
-    private Reservation addIdTennisCourtUSerStartTimeEndTimeToReservation(ReservationDTO reservationDTO) throws UserDoesNotExistException, TennisCourtDoesNotExistsException {
+    private void validateReservationDTO(ReservationDTO reservationDTO) throws InvalidDateException {
+        final var validator = new ReservationValidator(reservationDTO);
+        validator.validate();
+    }
 
+    private Reservation buildReservation(ReservationDTO reservationDTO) throws UserDoesNotExistException, TennisCourtDoesNotExistsException {
+        var user = findUser(reservationDTO);
+        var tennisCourt = findTennisCourt(reservationDTO);
 
-        var user = userRepository.findByUsername(reservationDTO.getUserUsername())
+        return createReservation(reservationDTO, user, tennisCourt);
+    }
+
+    private User findUser(ReservationDTO reservationDTO) throws UserDoesNotExistException {
+        return userRepository.findByUsername(reservationDTO.getUserUsername())
                 .orElseThrow(() -> new UserDoesNotExistException("User not found"));
+    }
 
-        var tennisCourt = tennisCourtRepository.findByName(reservationDTO.getTennisCourtName())
+    private TennisCourt findTennisCourt(ReservationDTO reservationDTO) throws TennisCourtDoesNotExistsException {
+        return tennisCourtRepository.findByName(reservationDTO.getTennisCourtName())
                 .orElseThrow(() -> new TennisCourtDoesNotExistsException("Tennis Court not found"));
+    }
 
+    private Reservation createReservation(ReservationDTO reservationDTO, User user, TennisCourt tennisCourt) {
         var reservation = new Reservation();
         reservation.setId(UUID.randomUUID().toString());
         reservation.setTennisCourtName(tennisCourt.getName());
         reservation.setUserUsername(user.getUsername());
         reservation.setStartTime(reservationDTO.getStartTime());
         reservation.setEndTime(reservationDTO.getEndTime());
-
         return reservation;
     }
 
@@ -64,13 +77,14 @@ public class ReservationService {
         return reservationRepository.save(reservation);
     }
 
+
     private boolean isValidReservation(ReservationDTO reservationDTO) {
         if (Objects.isNull(reservationDTO)) {
             return false;
         }
 
-        var startTime = reservationDTO.getStartTime();
-        var endTime = reservationDTO.getEndTime();
+        final var startTime = reservationDTO.getStartTime();
+        final var endTime = reservationDTO.getEndTime();
 
         if (Objects.isNull(startTime) || Objects.isNull(endTime)) {
             return false;
@@ -80,15 +94,16 @@ public class ReservationService {
             return false;
         }
 
-        // Check for overlapping reservations
-        boolean overlaps = reservationRepository.findAll().stream()
+        return !hasOverlappingReservation(reservationDTO, startTime, endTime);
+    }
+
+    private boolean hasOverlappingReservation(ReservationDTO reservationDTO, LocalDateTime startTime, LocalDateTime endTime) {
+        return reservationRepository.findAll().stream()
                 .anyMatch(reservation ->
                         reservation.getTennisCourtName().equals(reservationDTO.getTennisCourtName()) &&
                                 ((reservation.getStartTime().isBefore(endTime) && reservation.getEndTime().isAfter(startTime)) ||
                                         (reservation.getStartTime().isBefore(startTime) && reservation.getEndTime().isAfter(endTime)) ||
                                         (reservation.getStartTime().equals(startTime) && reservation.getEndTime().equals(endTime))));
-
-        return !overlaps;
     }
 
     public List<Reservation> getAllReservations() {

@@ -21,29 +21,36 @@ public class LocationService {
     }
 
     public Location addLocation(LocationDTO locationDTO) throws LocationAlreadyExistsException {
-        var newLocation = addIdNameDetailsToLocation(locationDTO);
+        var newLocation = buildLocation(locationDTO);
         return addLocation(newLocation);
-    }
-
-    public Location addIdNameDetailsToLocation(LocationDTO locationDTO) throws LocationAlreadyExistsException {
-        if (locationRepository.findByName(locationDTO.getName()).isPresent()) {
-            throw new LocationAlreadyExistsException("Location already exists");
-        }
-
-        var location = new Location();
-        location.setId(UUID.randomUUID().toString());
-        location.setName(locationDTO.getName());
-        location.setDetails(locationDTO.getDetails());
-
-        return location;
     }
 
     public Location addLocation(Location location) {
         return locationRepository.save(location);
     }
 
+    private Location buildLocation(LocationDTO locationDTO) throws LocationAlreadyExistsException {
+        checkLocationExists(locationDTO);
+        return createLocation(locationDTO);
+    }
+
+    private void checkLocationExists(LocationDTO locationDTO) throws LocationAlreadyExistsException {
+        if (locationRepository.findByName(locationDTO.getName()).isPresent()) {
+            throw new LocationAlreadyExistsException("Location already exists");
+        }
+    }
+
+    private Location createLocation(LocationDTO locationDTO) {
+        var location = new Location();
+        location.setId(UUID.randomUUID().toString());
+        location.setName(locationDTO.getName());
+        location.setDetails(locationDTO.getDetails());
+        return location;
+    }
+
+
     public Location update(String oldLocationName, LocationDTO updatedLocationDTO) throws LocationDoesNotExistException {
-        var location = locationRepository.findByName(oldLocationName)
+        final var location = locationRepository.findByName(oldLocationName)
                 .orElseThrow(() -> new LocationDoesNotExistException("Location not found"));
 
         updateOldLocation(location, updatedLocationDTO);
@@ -56,7 +63,7 @@ public class LocationService {
     }
 
     public void delete(String locationName) throws LocationDoesNotExistException {
-        var locationToDelete = locationRepository.findByName(locationName)
+        final var locationToDelete = locationRepository.findByName(locationName)
                 .orElseThrow(() -> new LocationDoesNotExistException("Location not found"));
 
         locationRepository.delete(locationToDelete);
