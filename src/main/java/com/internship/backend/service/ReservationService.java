@@ -31,7 +31,7 @@ public class ReservationService {
     @Autowired
     private UserRepository userRepository;
 
-    public Reservation addReservation(ReservationDTO reservationDTO) throws ReservationAlreadyExists, InvalidDateException, UserDoesNotExistException, TennisCourtDoesNotExistsException {
+    public Reservation addReservation(final ReservationDTO reservationDTO) throws ReservationAlreadyExists, InvalidDateException, UserDoesNotExistException, TennisCourtDoesNotExistsException {
         validateReservationDTO(reservationDTO);
 
         if (isValidReservation(reservationDTO)) {
@@ -41,29 +41,29 @@ public class ReservationService {
         }
     }
 
-    private void validateReservationDTO(ReservationDTO reservationDTO) throws InvalidDateException {
-        final var validator = new ReservationValidator(reservationDTO);
+    private void validateReservationDTO(final ReservationDTO reservationDTO) throws InvalidDateException {
+        var validator = new ReservationValidator(reservationDTO);
         validator.validate();
     }
 
-    private Reservation buildReservation(ReservationDTO reservationDTO) throws UserDoesNotExistException, TennisCourtDoesNotExistsException {
+    private Reservation buildReservation(final ReservationDTO reservationDTO) throws UserDoesNotExistException, TennisCourtDoesNotExistsException {
         var user = findUser(reservationDTO);
         var tennisCourt = findTennisCourt(reservationDTO);
 
         return createReservation(reservationDTO, user, tennisCourt);
     }
 
-    private User findUser(ReservationDTO reservationDTO) throws UserDoesNotExistException {
+    private User findUser(final ReservationDTO reservationDTO) throws UserDoesNotExistException {
         return userRepository.findByUsername(reservationDTO.getUserUsername())
                 .orElseThrow(() -> new UserDoesNotExistException("User not found"));
     }
 
-    private TennisCourt findTennisCourt(ReservationDTO reservationDTO) throws TennisCourtDoesNotExistsException {
+    private TennisCourt findTennisCourt(final ReservationDTO reservationDTO) throws TennisCourtDoesNotExistsException {
         return tennisCourtRepository.findByName(reservationDTO.getTennisCourtName())
                 .orElseThrow(() -> new TennisCourtDoesNotExistsException("Tennis Court not found"));
     }
 
-    private Reservation createReservation(ReservationDTO reservationDTO, User user, TennisCourt tennisCourt) {
+    private Reservation createReservation(final ReservationDTO reservationDTO, final User user, final TennisCourt tennisCourt) {
         var reservation = new Reservation();
         reservation.setId(UUID.randomUUID().toString());
         reservation.setTennisCourtName(tennisCourt.getName());
@@ -73,18 +73,17 @@ public class ReservationService {
         return reservation;
     }
 
-    public Reservation addReservation(Reservation reservation) {
+    public Reservation addReservation(final Reservation reservation) {
         return reservationRepository.save(reservation);
     }
 
-
-    private boolean isValidReservation(ReservationDTO reservationDTO) {
+    private boolean isValidReservation(final ReservationDTO reservationDTO) {
         if (Objects.isNull(reservationDTO)) {
             return false;
         }
 
-        final var startTime = reservationDTO.getStartTime();
-        final var endTime = reservationDTO.getEndTime();
+        var startTime = reservationDTO.getStartTime();
+        var endTime = reservationDTO.getEndTime();
 
         if (Objects.isNull(startTime) || Objects.isNull(endTime)) {
             return false;
@@ -97,7 +96,7 @@ public class ReservationService {
         return !hasOverlappingReservation(reservationDTO, startTime, endTime);
     }
 
-    private boolean hasOverlappingReservation(ReservationDTO reservationDTO, LocalDateTime startTime, LocalDateTime endTime) {
+    private boolean hasOverlappingReservation(final ReservationDTO reservationDTO, final LocalDateTime startTime, final LocalDateTime endTime) {
         return reservationRepository.findAll().stream()
                 .anyMatch(reservation ->
                         reservation.getTennisCourtName().equals(reservationDTO.getTennisCourtName()) &&
@@ -110,17 +109,17 @@ public class ReservationService {
         return reservationRepository.findAll();
     }
 
-    public Optional<Reservation> getReservationById(String id) {
+    public Optional<Reservation> getReservationById(final String id) {
         return reservationRepository.findById(id);
     }
 
-    public Reservation updateReservation(Reservation reservationDetails) throws ReservationDoesNotExistException {
+    public Reservation updateReservation(final Reservation reservationDetails) throws ReservationDoesNotExistException {
         return reservationRepository.findById(reservationDetails.getId())
                 .map(reservation -> updateOldReservation(reservation, reservationDetails))
                 .orElseThrow(() -> new ReservationDoesNotExistException("Reservation not found"));
     }
 
-    private Reservation updateOldReservation(Reservation reservation, Reservation reservationDetails) {
+    private Reservation updateOldReservation(final Reservation reservation, final Reservation reservationDetails) {
         reservation.setUserUsername(reservationDetails.getUserUsername());
         reservation.setTennisCourtName(reservationDetails.getTennisCourtName());
         reservation.setStartTime(reservationDetails.getStartTime());
@@ -128,14 +127,14 @@ public class ReservationService {
         return reservationRepository.save(reservation);
     }
 
-    public void deleteReservation(String id) throws ReservationDoesNotExistException {
+    public void deleteReservation(final String id) throws ReservationDoesNotExistException {
         if (!reservationRepository.existsById(id)) {
             throw new ReservationDoesNotExistException("Reservation not found with id " + id);
         }
         reservationRepository.deleteById(id);
     }
 
-    public List<TennisCourt> getAvailableTennisCourts(LocalDateTime startTime, LocalDateTime endTime) throws TennisCourtDoesNotExistsException, InvalidDateException {
+    public List<TennisCourt> getAvailableTennisCourts(final LocalDateTime startTime, final LocalDateTime endTime) throws TennisCourtDoesNotExistsException, InvalidDateException {
         List<Reservation> reservations = reservationRepository.findAll();
 
         List<TennisCourt> availableTennisCourts = tennisCourtRepository.findAll().stream()

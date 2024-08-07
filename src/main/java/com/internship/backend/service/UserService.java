@@ -29,20 +29,20 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public User register(UserDTO userDTO) throws UserAlreadyExistsException {
+    public User register(final UserDTO userDTO) throws UserAlreadyExistsException {
         return register(buildUser(userDTO));
     }
 
-    public User register(User user) {
+    public User register(final User user) {
         return userRepository.save(user);
     }
 
-    private User buildUser(UserDTO userDTO) throws UserAlreadyExistsException {
+    private User buildUser(final UserDTO userDTO) throws UserAlreadyExistsException {
         checkUserExists(userDTO);
 
-        final var user = createUser(userDTO);
+        var user = createUser(userDTO);
 
-        final var authority = createAuthority(userDTO);
+        var authority = createAuthority(userDTO);
         user.setAuthorities(singleton(authority));
 
         authorityRepository.save(authority);
@@ -50,7 +50,7 @@ public class UserService {
         return user;
     }
 
-    private void checkUserExists(UserDTO userDTO) throws UserAlreadyExistsException {
+    private void checkUserExists(final UserDTO userDTO) throws UserAlreadyExistsException {
         if (userRepository.findByUsername(userDTO.getUsername()).isPresent()) {
             throw new UserAlreadyExistsException("Username already exists");
         }
@@ -59,8 +59,8 @@ public class UserService {
         }
     }
 
-    private User createUser(UserDTO userDTO) {
-        final var user = new User();
+    private User createUser(final UserDTO userDTO) {
+        var user = new User();
         user.setId(UUID.randomUUID().toString());
         user.setUsername(userDTO.getUsername());
         user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
@@ -68,8 +68,8 @@ public class UserService {
         return user;
     }
 
-    private Authority createAuthority(UserDTO userDTO) {
-        final var authority = new Authority();
+    private Authority createAuthority(final UserDTO userDTO) {
+        var authority = new Authority();
         authority.setId(UUID.randomUUID().toString());
         authority.setName(userDTO.getRole());
         return authority;
@@ -79,8 +79,8 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    public User updateUser(String username, UserDTO userDTO) throws UserDoesNotExistException {
-        final var user = userRepository.findByUsername(username)
+    public User updateUser(final String username, final UserDTO userDTO) throws UserDoesNotExistException {
+        var user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UserDoesNotExistException("User not found"));
 
         updateOldUser(user, userDTO);
@@ -88,20 +88,20 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public void updateOldUser(User newUser, UserDTO userDTO) {
+    public void updateOldUser(final User newUser, final UserDTO userDTO) {
         newUser.setUsername(userDTO.getUsername());
-        final var hashPassword = passwordEncoder.encode(userDTO.getPassword());
+        var hashPassword = passwordEncoder.encode(userDTO.getPassword());
         newUser.setPassword(hashPassword);
         newUser.setEmail(userDTO.getEmail());
 
-        final var authority = authorityRepository.findByName(userDTO.getRole()).get();
+        var authority = authorityRepository.findByName(userDTO.getRole()).get();
         authority.setName(userDTO.getRole());
 
         newUser.setAuthorities(Set.of(authority));
     }
 
-    public void deleteUser(String username) throws UserDoesNotExistException {
-        final var userToDelete = userRepository.findByUsername(username).stream()
+    public void deleteUser(final String username) throws UserDoesNotExistException {
+        var userToDelete = userRepository.findByUsername(username).stream()
                 .filter(user -> user.getUsername().equals(username))
                 .findFirst()
                 .orElseThrow(() -> new UserDoesNotExistException("User not found"));

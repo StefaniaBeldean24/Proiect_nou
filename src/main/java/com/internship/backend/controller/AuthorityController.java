@@ -25,7 +25,7 @@ public class AuthorityController {
 
     @PostMapping("/addAuthority/{userId}")
     public Authority createAuthority(@RequestBody AuthorityDTO authorityDTO) throws UserDoesNotExistException, AuthorityAlreadyExistsException {
-        return authorityService.createAuthority(authorityDTO);
+        return authorityService.addAuthority(authorityDTO);
     }
 
     @GetMapping("/getAllAuthorities")

@@ -51,7 +51,7 @@ public class DataInitializer {
                 .build();
     }
 
-    private User createUser(Authority authority) {
+    private User createUser(final Authority authority) {
         return User.builder()
                 .id(UUID.randomUUID().toString())
                 .username(USERNAME)
